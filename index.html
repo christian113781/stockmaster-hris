@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1473E6">
+  <title>TDC HRIS — HR Dashboard</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png">
+  <link rel="icon" href="assets/img/favicon.ico" sizes="any">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <!-- Shared dashboard logic (sidebar, toast, notifications, modal plumbing) -->
+  <script src="assets/js/main.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="assets/js/tailwind-config.js"></script>
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="font-poppins text-gray-800 antialiased" x-data="dashboard()" x-cloak>
+
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<!-- ════ MOBILE OVERLAY ════ -->
+<div id="sidebar-overlay"
+     class="fixed inset-0 bg-gray-900/50 z-20 lg:hidden"
+     aria-hidden="true"
+     x-show="mobileOpen"
+     x-transition.opacity
+     @click="closeMobileSidebar()"
+     style="display:none"></div>
+
+<!-- ════ TOAST ════ -->
+<div id="toast" role="status" aria-live="polite" aria-atomic="true" :class="{ show: toast.show }" :data-type="toast.type">
+  <div class="toast-icon" :class="toastStyle.bg" aria-hidden="true">
+    <svg class="w-5 h-5" :class="toastStyle.color" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" :d="toastStyle.icon"/></svg>
+  </div>
+  <div class="min-w-0 flex-1">
+    <p class="toast-title" x-text="toast.title"></p>
+    <p class="toast-msg" x-text="toast.msg"></p>
+  </div>
+  <button type="button" class="toast-close" @click="hideToast()" aria-label="Dismiss notification">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+  </button>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     MODAL SECTION — "Add New Employee"
+     (page-specific: lives in this page only, not in main.js)
+════════════════════════════════════════════════ -->
+<div id="modal-backdrop"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="modal-title"
+     aria-describedby="modal-desc"
+     :class="{ open: modalOpen }"
+     @keydown.escape="closeModal()"
+     @click="if ($event.target.id === 'modal-backdrop') closeModal()">
+
+  <div id="modal-dialog" x-ref="dialog" @keydown.tab="trapFocus($event)">
+
+    <!-- Modal header -->
+    <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100 sticky top-0 bg-white z-10 rounded-t-[1.25rem]">
+      <div>
+        <h2 id="modal-title" class="text-lg font-bold text-gray-900">Add New Employee</h2>
+        <p id="modal-desc" class="text-xs text-gray-400 mt-0.5">Fill in the details to add a team member to the directory</p>
+      </div>
+      <button type="button" @click="closeModal()"
+              class="p-2 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+              aria-label="Close dialog">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Step indicator -->
+    <div class="px-6 py-4 border-b border-gray-50 bg-gray-50/60">
+      <div class="flex items-center" role="list" aria-label="Form steps">
+        <template x-for="(label, i) in stepLabels" :key="i">
+          <template x-if="true">
+            <div class="contents">
+              <div role="listitem" class="flex flex-col items-center gap-1 text-center">
+                <div class="step-dot"
+                     :class="i+1 < currentStep ? 'done' : (i+1 === currentStep ? 'active' : 'upcoming')"
+                     :aria-current="i+1 === currentStep ? 'step' : null">
+                  <span x-show="i+1 < currentStep">✓</span>
+                  <span x-show="i+1 >= currentStep" x-text="i+1"></span>
+                </div>
+                <span class="text-[11.5px] font-semibold" :class="i+1 === currentStep ? 'text-brand-600' : 'text-gray-400 font-medium'" x-text="label"></span>
+              </div>
+              <div class="step-line" :class="{ done: i+1 < currentStep }" aria-hidden="true" x-show="i < stepLabels.length - 1"></div>
+            </div>
+          </template>
+        </template>
+      </div>
+    </div>
+
+    <!-- Form body -->
+    <form @submit.prevent="submitForm()" novalidate>
+      <fieldset x-show="currentStep === 1" class="px-6 py-5 space-y-4 border-0 m-0 p-0">
+        <legend class="sr-only">Step 1: Personal information</legend>
+        <div>
+          <label for="emp-name" class="block text-xs font-semibold text-gray-600 mb-1.5">Full Name <span aria-hidden="true" class="text-red-500">*</span><span class="sr-only">(required)</span></label>
+          <input id="emp-name" name="name" type="text" class="field" :class="{ error: errors.name }" x-model.trim="form.name" placeholder="e.g. Alex Rivera" autocomplete="off" required aria-describedby="emp-name-err">
+          <p id="emp-name-err" class="mt-1 text-xs text-red-500" role="alert" x-show="errors.name">Full name is required.</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="emp-id" class="block text-xs font-semibold text-gray-600 mb-1.5">Employee ID <span aria-hidden="true" class="text-red-500">*</span><span class="sr-only">(required)</span></label>
+          <input id="emp-id" name="empId" type="text" class="field" :class="{ error: errors.empId }" x-model.trim="form.empId" placeholder="e.g. EMP-1249" autocomplete="off" required aria-describedby="emp-id-err">
+          <p id="emp-id-err" class="mt-1 text-xs text-red-500" role="alert" x-show="errors.empId">Employee ID is required.</p>
+        </div>
+        <div>
+          <label for="emp-dept" class="block text-xs font-semibold text-gray-600 mb-1.5">Department <span aria-hidden="true" class="text-red-500">*</span><span class="sr-only">(required)</span></label>
+          <select id="emp-dept" name="department" class="field" :class="{ error: errors.department }" x-model="form.department" required aria-describedby="emp-dept-err"><option value="">Select department</option><option>Academics</option><option>Information Technology</option><option>Registrar</option><option>Finance</option><option>Human Resources</option></select>
+          <p id="emp-dept-err" class="mt-1 text-xs text-red-500" role="alert" x-show="errors.department">Please select a department.</p>
+        </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="emp-title" class="block text-xs font-semibold text-gray-600 mb-1.5">Job Title <span aria-hidden="true" class="text-red-500">*</span><span class="sr-only">(required)</span></label>
+          <input id="emp-title" name="jobTitle" type="text" class="field" :class="{ error: errors.jobTitle }" x-model.trim="form.jobTitle" placeholder="e.g. Frontend Developer" autocomplete="off" required aria-describedby="emp-title-err">
+          <p id="emp-title-err" class="mt-1 text-xs text-red-500" role="alert" x-show="errors.jobTitle">Job title is required.</p>
+        </div>
+        <div>
+          <label for="emp-email" class="block text-xs font-semibold text-gray-600 mb-1.5">Work Email</label>
+          <input id="emp-email" name="email" type="email" class="field" x-model.trim="form.email" placeholder="name@tdc.edu.ph" autocomplete="off">
+        </div>
+        </div>
+        <div>
+          <label for="emp-phone" class="block text-xs font-semibold text-gray-600 mb-1.5">Mobile Number</label>
+          <input id="emp-phone" name="phone" type="tel" class="field" x-model.trim="form.phone" placeholder="+63 9XX XXX XXXX" autocomplete="off">
+        </div>
+      </fieldset>
+
+      <!-- ── STEP 2 ── -->
+      <fieldset x-show="currentStep === 2" class="px-6 py-5 space-y-4 border-0 m-0 p-0">
+        <legend class="sr-only">Step 2: Job details and compensation</legend>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="emp-type" class="block text-xs font-semibold text-gray-600 mb-1.5">Employment Type</label>
+          <select id="emp-type" name="employmentType" class="field" x-model="form.employmentType"><option>Regular</option><option>Probationary</option><option>Contractual</option><option>Part-time</option></select>
+        </div>
+        <div>
+          <label for="emp-status" class="block text-xs font-semibold text-gray-600 mb-1.5">Status</label>
+          <select id="emp-status" name="status" class="field" x-model="form.status"><option>Active</option><option>On Leave</option><option>Inactive</option></select>
+        </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="emp-office" class="block text-xs font-semibold text-gray-600 mb-1.5">Work Location</label>
+          <select id="emp-office" name="location" class="field" x-model="form.location"><option>Manila Office</option><option>Cebu Office</option><option>Davao Office</option><option>Remote</option></select>
+        </div>
+        <div>
+          <label for="emp-start" class="block text-xs font-semibold text-gray-600 mb-1.5">Start Date <span aria-hidden="true" class="text-red-500">*</span><span class="sr-only">(required)</span></label>
+          <input id="emp-start" name="startDate" type="date" class="field" :class="{ error: errors.startDate }" x-model="form.startDate" placeholder="" autocomplete="off" required aria-describedby="emp-start-err">
+          <p id="emp-start-err" class="mt-1 text-xs text-red-500" role="alert" x-show="errors.startDate">Start date is required.</p>
+        </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="emp-manager" class="block text-xs font-semibold text-gray-600 mb-1.5">Reporting Manager</label>
+          <select id="emp-manager" name="manager" class="field" x-model="form.manager"><option value="">Select manager</option><option>Maria Santos</option><option>Paolo Reyes</option><option>Angela Cruz</option></select>
+        </div>
+        <div>
+          <label for="emp-salary" class="block text-xs font-semibold text-gray-600 mb-1.5">Monthly Salary (₱) <span aria-hidden="true" class="text-red-500">*</span><span class="sr-only">(required)</span></label>
+          <input id="emp-salary" name="salary" type="number" class="field" :class="{ error: errors.salary }" x-model.number="form.salary" placeholder="0.00" autocomplete="off" required aria-describedby="emp-salary-err" min="0" step="0.01">
+          <p id="emp-salary-err" class="mt-1 text-xs text-red-500" role="alert" x-show="errors.salary">Monthly salary is required.</p>
+        </div>
+        </div>
+        <div class="bg-brand-50 rounded-xl p-4 flex items-center justify-between">
+          <div class="text-sm text-brand-700 font-medium">Estimated Annual Pay <span class="block text-[11.5px] font-normal text-brand-600/80">Includes 13th-month pay</span></div>
+          <div class="text-lg font-bold text-brand-600" x-text="annualText">—</div>
+        </div>
+      </fieldset>
+
+      <!-- ── STEP 3: Image & Review ── -->
+      <fieldset x-show="currentStep === 3" class="px-6 py-5 space-y-4 border-0 m-0 p-0">
+        <legend class="sr-only">Step 3: Profile photo and review</legend>
+
+        <!-- Image upload -->
+        <div>
+          <span class="block text-xs font-semibold text-gray-600 mb-1.5">Profile Photo</span>
+          <label for="prod-image" class="upload-zone block cursor-pointer" :class="{ dragover: dragging }"
+                 @dragover.prevent="dragging = true" @dragleave="dragging = false"
+                 @drop.prevent="dragging = false; handleFile($event.dataTransfer.files[0])">
+            <div x-show="!imagePreview">
+              <div class="w-12 h-12 rounded-2xl bg-brand-100 flex items-center justify-center mx-auto mb-3">
+                <svg class="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <p class="text-sm font-medium text-gray-700">Drop an image here or <span class="text-brand-600">browse</span></p>
+              <p class="text-xs text-gray-400 mt-1">PNG, JPG, WEBP — max 5 MB</p>
+            </div>
+            <img :src="imagePreview" alt="Profile photo preview" x-show="imagePreview" class="mx-auto max-h-36 rounded-xl object-cover">
+          </label>
+          <input id="prod-image" name="image" type="file" accept="image/*" class="sr-only"
+                 @change="handleFile($event.target.files[0])"
+                 aria-label="Upload profile photo" tabindex="-1">
+        </div>
+
+        <!-- Review summary -->
+        <div class="bg-gray-50 rounded-xl p-4 space-y-2.5" aria-live="polite" aria-label="Review employee details">
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Review Details</p>
+          <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            <span class="text-gray-500">Name</span><span class="font-medium text-gray-800 text-end truncate" x-text="form.name || '—'"></span>
+            <span class="text-gray-500">Employee ID</span><span class="font-medium text-gray-800 text-end truncate" x-text="form.empId || '—'"></span>
+            <span class="text-gray-500">Department</span><span class="font-medium text-gray-800 text-end truncate" x-text="form.department || '—'"></span>
+            <span class="text-gray-500">Position</span><span class="font-medium text-gray-800 text-end truncate" x-text="form.jobTitle || '—'"></span>
+            <span class="text-gray-500">Employment</span><span class="font-medium text-gray-800 text-end truncate" x-text="form.employmentType || '—'"></span>
+            <span class="text-gray-500">Location</span><span class="font-medium text-gray-800 text-end truncate" x-text="form.location || '—'"></span>
+            <span class="text-gray-500">Start Date</span><span class="font-medium text-gray-800 text-end truncate" x-text="form.startDate || '—'"></span>
+            <span class="text-gray-500">Monthly Salary</span><span class="font-medium text-gray-800 text-end truncate" x-text="form.salary ? '₱' + Number(form.salary).toLocaleString() : '—'"></span>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Modal footer (navigation) -->
+      <div class="flex items-center justify-between px-6 py-4 border-t border-gray-100 gap-3 sticky bottom-0 bg-white rounded-b-[1.25rem]">
+        <button type="button" @click="backStep()" x-show="currentStep > 1"
+                class="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors min-h-[40px]">
+          ← Back
+        </button>
+        <div class="flex-1" x-show="currentStep === 1"></div>
+        <div class="ms-auto flex items-center gap-3">
+          <button type="button" @click="closeModal()"
+                  class="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-100 transition-colors min-h-[40px]">
+            Cancel
+          </button>
+          <button type="button" @click="nextStep()" x-show="currentStep < totalSteps"
+                  class="px-6 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 text-white hover:bg-brand-700 transition-colors shadow-sm min-h-[40px]">
+            Next →
+          </button>
+          <button type="submit" x-show="currentStep === totalSteps"
+                  class="px-6 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 text-white hover:bg-brand-700 transition-colors shadow-sm min-h-[40px]">
+            Add Employee
+          </button>
+        </div>
+      </div>
+    </form>
+  </div><!-- #modal-dialog -->
+</div><!-- #modal-backdrop -->
+
+<!-- ════════════════════════════════════════════════
+     LAYOUT SHELL
+════════════════════════════════════════════════ -->
+<div class="flex min-h-[100dvh]">
+
+  <!-- ════════════════════════════════════════════
+       SIDEBAR SECTION (shared markup + shared data
+       from main.js: navSections, sidebarCollapsed, mobileOpen)
+  ════════════════════════════════════════════════ -->
+  <aside id="sidebar"
+         aria-label="Primary navigation"
+         class="bg-white flex flex-col shadow-card flex-shrink-0 relative z-30"
+         :class="{ collapsed: sidebarCollapsed, 'mobile-open': mobileOpen }">
+
+    <!-- Logo -->
+    <div class="logo-wrap flex items-center px-4 py-4 border-b border-gray-100 flex-shrink-0">
+      <img src="assets/img/tdc-logo-full.png" alt="Tagum Doctors College, Inc." class="logo-full w-full h-auto max-h-11 object-contain object-left">
+      <img src="assets/img/tdc-mark.png" alt="Tagum Doctors College" width="40" height="40" class="logo-mark w-10 h-10 object-contain">
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 sidebar-scroll py-3 px-2" aria-label="Primary">
+      <template x-for="section in navSections" :key="section.label">
+        <div>
+          <p class="nav-section-label px-3 mb-2 mt-4 first:mt-0 text-[11.5px] font-semibold text-gray-400 uppercase tracking-wider" x-text="section.label"></p>
+          <ul class="space-y-0.5" role="list">
+            <template x-for="item in section.items" :key="item.name">
+              <li>
+                <a :href="item.href" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+                   :aria-current="item.active ? 'page' : null" :title="item.name">
+                  <svg class="w-5 h-5 flex-shrink-0" :class="item.active ? 'text-brand-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon"/>
+                  </svg>
+                  <span class="nav-label" x-text="item.name"></span>
+                </a>
+              </li>
+            </template>
+          </ul>
+        </div>
+      </template>
+    </nav>
+
+    <!-- User -->
+    <div class="border-t border-gray-100 px-3 py-4 flex-shrink-0">
+      <div class="user-wrap flex items-center gap-3">
+        <div class="user-avatar w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center flex-shrink-0 text-white text-xs font-bold" aria-hidden="true">JD</div>
+        <div class="user-info min-w-0">
+          <p class="text-sm font-semibold text-gray-800 truncate">Juan Dela Cruz</p>
+          <p class="text-xs text-gray-500 truncate">HR Manager</p>
+        </div>
+        <button class="user-info ms-auto p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                aria-label="Sign out" onclick="location.href='login.html'">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══════════════════════════════════ -->
+  <div class="flex-1 flex flex-col min-w-0">
+
+    <!-- ════════════════════════════════════════════
+         HEADER SECTION (shared markup + shared data
+         from main.js: toast, notifications, signed-in user)
+    ════════════════════════════════════════════════ -->
+    <header class="sticky top-0 z-10 bg-white border-b border-gray-100 shadow-sm">
+      <div class="flex items-center gap-3 px-4 sm:px-6 py-3.5">
+        <!-- Desktop sidebar toggle -->
+        <button id="collapse-btn"
+                class="hidden lg:flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-brand-600 transition-colors flex-shrink-0"
+                :class="{ 'is-collapsed': sidebarCollapsed }"
+                @click="sidebarCollapsed = !sidebarCollapsed"
+                :aria-expanded="(!sidebarCollapsed).toString()" aria-controls="sidebar"
+                :aria-label="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v18"/>
+          </svg>
+        </button>
+
+        <!-- Mobile menu btn -->
+        <button id="menu-btn"
+                class="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+                @click="mobileOpen ? closeMobileSidebar() : openMobileSidebar()"
+                :aria-expanded="mobileOpen.toString()" aria-controls="sidebar"
+                :aria-label="mobileOpen ? 'Close navigation menu' : 'Open navigation menu'">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+
+        <!-- Breadcrumb -->
+        <nav aria-label="Breadcrumb" class="flex-1 min-w-0 text-sm">
+          <ol class="flex items-center gap-2">
+            <li class="text-gray-400">Workspace</li>
+            <li class="text-gray-300" aria-hidden="true">/</li>
+            <li class="font-semibold text-gray-900" aria-current="page">Dashboard</li>
+          </ol>
+        </nav>
+
+        <div class="flex items-center gap-2 ms-auto">
+          <div class="relative">
+            <button @click="notifOpen = !notifOpen"
+                    class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+                    :aria-label="'Notifications' + (unreadCount ? ' (' + unreadCount + ' unread)' : '')"
+                    aria-haspopup="true" :aria-expanded="notifOpen.toString()" aria-controls="notif-panel">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+              <span class="absolute -top-0.5 -end-0.5 min-w-[17px] h-[17px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none flex items-center justify-center ring-2 ring-white" aria-hidden="true" x-show="unreadCount > 0" x-text="unreadCount"></span>
+            </button>
+
+            <div id="notif-panel" role="menu" aria-label="Notifications"
+                 x-show="notifOpen" x-transition
+                 @click.outside="notifOpen = false" @keydown.escape="notifOpen = false"
+                 class="absolute end-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-card border border-gray-100 z-40 overflow-hidden"
+                 style="display:none">
+              <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <h2 class="text-sm font-bold text-gray-900">Notifications</h2>
+                <button @click="markAllRead()" x-show="unreadCount > 0"
+                        class="text-xs font-semibold text-brand-600 hover:text-brand-700">Mark all as read</button>
+              </div>
+              <ul class="max-h-80 overflow-y-auto divide-y divide-gray-50" role="list">
+                <template x-for="n in notifications" :key="n.id">
+                  <li>
+                    <button @click="markRead(n)" class="w-full flex items-start gap-3 px-4 py-3 text-start hover:bg-gray-50/60 transition-colors" :class="{ 'bg-brand-50/40': !n.read }">
+                      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" :class="n.iconBg" aria-hidden="true">
+                        <svg class="w-4 h-4" :class="n.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="n.icon"/></svg>
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium text-gray-800 truncate" x-text="n.title"></p>
+                        <p class="text-xs text-gray-500 mt-0.5" x-text="n.message"></p>
+                        <p class="text-xs text-gray-500 mt-1" x-text="n.time"></p>
+                      </div>
+                      <span class="w-2 h-2 rounded-full bg-brand-500 flex-shrink-0 mt-1.5" aria-hidden="true" x-show="!n.read"></span>
+                    </button>
+                  </li>
+                </template>
+                <li x-show="notifications.length === 0">
+                  <p class="px-4 py-8 text-center text-sm text-gray-400">You're all caught up.</p>
+                </li>
+              </ul>
+              <div class="px-4 py-3 border-t border-gray-100 text-center">
+                <a href="#" class="text-xs font-semibold text-brand-600 hover:text-brand-700">View all notifications</a>
+              </div>
+            </div>
+          </div>
+          <!-- Signed-in user -->
+          <div class="flex items-center gap-3 ms-1 ps-3 sm:ps-4 border-s border-gray-200">
+            <div class="hidden sm:block text-end leading-tight">
+              <p class="text-sm font-semibold text-gray-900 whitespace-nowrap">Juan Dela Cruz</p>
+              <p class="text-[11.5px] font-medium text-gray-500 whitespace-nowrap">HR Manager</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ring-2 ring-white shadow-sm" role="img" aria-label="Juan Dela Cruz">JD</div>
+            <button type="button" class="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Sign out" onclick="location.href='login.html'" title="Sign out">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ════════════════════════════════════════════
+         MAIN PAGE SECTION (page-specific content: this
+         page's stat cards, chart, tables, etc.)
+    ════════════════════════════════════════════════ -->
+    <main id="main" tabindex="-1" class="flex-1 px-4 sm:px-6 py-6 space-y-5 max-w-[1600px] mx-auto w-full">
+
+      <!-- Greeting -->
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p class="text-[11.5px] font-semibold text-brand-600 uppercase tracking-[.18em]">Overview</p>
+          <h1 class="text-xl sm:text-2xl font-bold text-gray-900 mt-1">Good day, HR Admin <span aria-hidden="true">👋</span></h1>
+          <p class="text-sm text-gray-500 mt-1">Here’s what’s happening across your organization.</p>
+        </div>
+        <!-- Live date & time (Philippine time) -->
+        <div x-data="liveClock()" class="sm:text-end" role="timer" aria-label="Current date and time">
+          <p class="flex sm:justify-end items-baseline gap-2 text-gray-900 tabular-nums leading-none">
+            <span class="text-5xl sm:text-6xl font-bold tracking-tight" x-text="hm"></span>
+            <span class="text-xl sm:text-2xl font-semibold text-brand-600" x-text="ampm"></span>
+          </p>
+          <p class="text-base sm:text-lg font-medium text-gray-500 mt-2.5" x-text="longDate"></p>
+        </div>
+      </div>
+
+      <!-- Stat cards -->
+      <section aria-label="Key metrics" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <template x-for="s in stats" :key="s.label">
+          <article class="stat-card bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+            <div class="flex items-start justify-between">
+              <p class="text-xs font-semibold text-gray-500" x-text="s.label"></p>
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="s.iconBg" aria-hidden="true">
+                <svg class="w-5 h-5" :class="s.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="s.icon"/></svg>
+              </div>
+            </div>
+            <p class="display-num font-bold text-gray-900 mt-3" x-text="s.value"></p>
+            <p class="text-[11.5px] text-gray-500 mt-1" x-html="s.sub"></p>
+          </article>
+        </template>
+      </section>
+
+      <!-- Attendance + Departments -->
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <section aria-labelledby="att-heading" class="xl:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 id="att-heading" class="text-base font-bold text-gray-900">Attendance Snapshot</h2>
+              <p class="text-xs text-gray-500 mt-0.5">Illustrative attendance trend · past 7 days</p>
+            </div>
+            <span class="badge bg-brand-50 text-brand-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span> Weekly</span>
+          </div>
+          <div class="relative h-56 mt-6 border-b border-gray-100" role="img" :aria-label="'Attendance by day: ' + attendance.map(d => d.day + ' ' + d.pct + '%').join(', ')">
+            <div class="absolute inset-x-0 top-1/2 border-t border-dashed border-gray-100" aria-hidden="true"></div>
+            <div class="relative h-full flex items-end justify-between gap-2" aria-hidden="true">
+              <template x-for="d in attendance" :key="d.day">
+                <div class="flex-1 h-full flex flex-col items-center justify-end gap-1.5 min-w-0">
+                  <span class="text-[11.5px] font-semibold text-gray-600" x-text="d.pct + '%'"></span>
+                  <div class="bar w-7 sm:w-9 rounded-t-lg bg-gradient-to-t from-brand-600 to-brand-400" :style="'height:' + (d.pct * 0.82) + '%'"></div>
+                </div>
+              </template>
+            </div>
+          </div>
+          <div class="flex justify-between mt-2" aria-hidden="true">
+            <template x-for="d in attendance" :key="d.day"><span class="flex-1 text-center text-[11.5px] font-semibold text-gray-500" x-text="d.day"></span></template>
+          </div>
+          <div class="flex items-center justify-between text-xs text-gray-500 mt-4">
+            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-brand-500"></span> Attendance percentage</span>
+            <span>Demo trend data</span>
+          </div>
+        </section>
+
+        <section aria-labelledby="leave-heading" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+          <div class="flex items-center justify-between gap-3">
+            <h2 id="leave-heading" class="text-base font-bold text-gray-900">Leave Requests</h2>
+            <a href="#" class="text-sm font-semibold text-brand-600 hover:text-brand-700">View All</a>
+          </div>
+          <ul class="mt-3 divide-y divide-gray-100" role="list">
+            <template x-for="l in leaves" :key="l.name">
+              <li class="flex items-center gap-3 py-3">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" :class="[l.bg, l.text]" aria-hidden="true" x-text="l.initials"></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-semibold text-gray-900 truncate" x-text="l.name"></p>
+                  <p class="text-xs text-gray-500 mt-0.5 truncate" x-text="l.dept"></p>
+                </div>
+                <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                  <span class="px-2 py-0.5 rounded-md text-[11.5px] font-semibold whitespace-nowrap" :class="[l.pillBg, l.pillText]" x-text="l.type"></span>
+                  <span class="text-xs text-gray-500" x-text="l.date"></span>
+                </div>
+              </li>
+            </template>
+          </ul>
+        </section>
+      </div>
+
+      <!-- Recent activities + Upcoming events -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <section aria-labelledby="act-heading" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+          <div class="flex items-center justify-between gap-3">
+            <h2 id="act-heading" class="text-base font-bold text-gray-900">Recent Activities</h2>
+            <a href="#" class="text-sm font-semibold text-brand-600 hover:text-brand-700">View All</a>
+          </div>
+          <ul class="mt-3 divide-y divide-gray-100" role="list">
+            <template x-for="a in activity" :key="a.title">
+              <li class="flex items-center gap-3 py-3">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" :class="[a.bg, a.color]" aria-hidden="true">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="a.icon"/></svg>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-semibold text-gray-900 truncate" x-text="a.title"></p>
+                  <p class="text-xs text-gray-500 mt-0.5 truncate" x-text="a.sub"></p>
+                </div>
+                <span class="text-xs text-gray-500 whitespace-nowrap flex-shrink-0" x-text="a.time"></span>
+              </li>
+            </template>
+          </ul>
+        </section>
+
+        <section aria-labelledby="evt-heading" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+          <div class="flex items-center justify-between gap-3">
+            <h2 id="evt-heading" class="text-base font-bold text-gray-900">Upcoming Events</h2>
+            <a href="#" class="text-sm font-semibold text-brand-600 hover:text-brand-700">View All</a>
+          </div>
+          <ul class="mt-3 divide-y divide-gray-100" role="list">
+            <template x-for="e in events" :key="e.title">
+              <li class="flex items-center gap-3 py-3">
+                <div class="w-10 h-10 rounded-xl flex flex-col items-center justify-center flex-shrink-0 leading-none" :class="e.soon ? 'bg-red-50 text-red-500' : 'bg-slate-100 text-slate-600'" aria-hidden="true">
+                  <span class="text-[10px] font-semibold uppercase tracking-wide" x-text="e.month"></span>
+                  <span class="text-sm font-bold mt-0.5" x-text="e.day"></span>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-semibold text-gray-900 truncate" x-text="e.title"></p>
+                  <p class="text-xs text-gray-500 mt-0.5 truncate" x-text="e.sub"></p>
+                </div>
+                <span class="text-xs text-gray-500 whitespace-nowrap flex-shrink-0" x-text="e.time"></span>
+              </li>
+            </template>
+          </ul>
+        </section>
+      </div>
+
+      <!-- Headcount by department -->
+      <div>
+        <section aria-labelledby="dept-heading" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+          <h2 id="dept-heading" class="text-base font-bold text-gray-900">Headcount by Department</h2>
+          <p class="text-xs text-gray-500 mt-0.5">Active staff distribution</p>
+          <ul class="mt-8 space-y-4" role="list">
+            <template x-for="d in departments" :key="d.name">
+              <li class="flex items-center gap-3">
+                <span class="w-36 text-xs font-semibold text-gray-600 truncate" x-text="d.name"></span>
+                <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden" role="progressbar" :aria-valuenow="d.count" aria-valuemin="0" :aria-valuemax="maxDept" :aria-label="d.name + ' ' + d.count">
+                  <div class="h-full rounded-full" :class="d.color" :style="'width:' + (d.count / maxDept * 100) + '%'"></div>
+                </div>
+                <span class="w-4 text-end text-xs font-bold text-gray-900" x-text="d.count"></span>
+              </li>
+            </template>
+          </ul>
+        </section>
+      </div>
+    </main>
+
+    <footer class="border-t border-gray-100 px-6 py-4 text-center text-xs text-gray-400">
+      Tagum Doctors College, Inc. &copy; 2026
+    </footer>
+  </div>
+</div>
+
+<script>
+function dashboard() {
+  return {
+    /* shared chrome: sidebar, toast, notifications, modal plumbing — see assets/js/main.js */
+    ...sharedChrome('index.html'),
+
+    /* ── "Add New Employee" modal ── */
+    modalOpen: false,
+    currentStep: 1,
+    totalSteps: 3,
+    stepLabels: ['Personal Info', 'Job Details', 'Photo & Review'],
+    dragging: false,
+    imagePreview: null,
+    errors: {},
+    blankForm() {
+      return { name: '', empId: '', department: '', jobTitle: '', email: '', phone: '',
+               employmentType: 'Regular', status: 'Active', location: 'Manila Office',
+               startDate: '', manager: '', salary: '' };
+    },
+    form: {},
+    init() { this.form = this.blankForm(); },
+
+    openModal() { this.resetModal(); this.openModalCommon(); },
+    resetModal() {
+      this.currentStep = 1;
+      this.form = this.blankForm();
+      this.errors = {};
+      this.imagePreview = null;
+    },
+    validateStep(n) {
+      this.errors = {};
+      const need = n === 1 ? ['name', 'empId', 'department', 'jobTitle'] : n === 2 ? ['startDate', 'salary'] : [];
+      need.forEach(k => { if (!this.form[k]) this.errors[k] = true; });
+      return Object.keys(this.errors).length === 0;
+    },
+    submitForm() {
+      if (!this.validateStep(1)) { this.currentStep = 1; return; }
+      if (!this.validateStep(2)) { this.currentStep = 2; return; }
+      const { name, department } = this.form;
+      this.closeModal();
+      this.showToast(name + ' has joined ' + department.replace('&amp;', '&') + '.', 'success', 'Employee added');
+    },
+    get annualText() {
+      const s = parseFloat(this.form.salary) || 0;
+      return s ? '₱' + (s * 13).toLocaleString() : '—';
+    },
+    handleFile(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+      const reader = new FileReader();
+      reader.onload = e => { this.imagePreview = e.target.result; };
+      reader.readAsDataURL(file);
+    },
+    reviewRequest(a) {
+      this.showToast('Opening ' + a.name + '’s request for review.', 'info', 'Review request');
+    },
+
+    /* ── dashboard data ── */
+    stats: [
+      { label: 'Total Employees',      value: '12',       sub: '<strong class="text-brand-600">10</strong> currently active',  iconBg: 'bg-brand-50',   iconColor: 'text-brand-600',   icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
+      { label: 'Present Today',        value: '9',        sub: '<strong class="text-emerald-600">90%</strong> of active employees', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+      { label: 'Pending Leaves',       value: '3',        sub: 'Requires your attention',                                      iconBg: 'bg-amber-50',   iconColor: 'text-amber-500',   icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+      { label: 'Monthly Basic Payroll', value: '₱302,000', sub: 'Illustrative gross base amount',                              iconBg: 'bg-sky-50',     iconColor: 'text-sky-600',     icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+    ],
+    attendance: [
+      { day: 'Sat', pct: 91 }, { day: 'Sun', pct: 86 }, { day: 'Mon', pct: 93 }, { day: 'Tue', pct: 89 },
+      { day: 'Wed', pct: 96 }, { day: 'Thu', pct: 90 }, { day: 'Fri', pct: 90 },
+    ],
+    departments: [
+      { name: 'Academics',              count: 3, color: 'bg-brand-600' },
+      { name: 'Information Technology', count: 2, color: 'bg-sky-500' },
+      { name: 'Registrar',              count: 2, color: 'bg-brand-400' },
+      { name: 'Finance',                count: 1, color: 'bg-brand-300' },
+      { name: 'Human Resources',        count: 1, color: 'bg-cyan-400' },
+    ],
+    get maxDept() { return Math.max(...this.departments.map(d => d.count)); },
+    leaves: [
+      { name: 'Maria Santos',  initials: 'MS', dept: 'Faculty',        type: 'Vacation Leave', date: 'Oct 30, 2026', bg: 'bg-rose-100',  text: 'text-rose-600',  pillBg: 'bg-amber-50', pillText: 'text-amber-600' },
+      { name: 'John Dela Cruz', initials: 'JD', dept: 'IT Staff',       type: 'Sick Leave',     date: 'Oct 29, 2026', bg: 'bg-sky-100',   text: 'text-sky-700',   pillBg: 'bg-red-50',   pillText: 'text-red-500' },
+      { name: 'Ana Reyes',     initials: 'AR', dept: 'Administrative', type: 'Personal Leave', date: 'Oct 28, 2026', bg: 'bg-violet-100', text: 'text-violet-600', pillBg: 'bg-brand-50', pillText: 'text-brand-600' },
+    ],
+    activity: [
+      { title: 'New employee added',   sub: 'Juan Dela Cruz was added to the HR system.',            time: '2 minutes ago',  bg: 'bg-brand-50',   color: 'text-brand-600',   icon: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z' },
+      { title: 'Leave request submitted', sub: 'Maria Santos submitted a vacation leave request.',   time: '35 minutes ago', bg: 'bg-emerald-50', color: 'text-emerald-600', icon: 'M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z' },
+      { title: 'Payroll data updated', sub: 'Monthly payroll records have been updated.',            time: '2 hours ago',    bg: 'bg-violet-50',  color: 'text-violet-600',  icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+    ],
+    events: [
+      { month: 'Oct', day: '31', soon: true,  title: 'Payroll Processing',                 sub: 'Monthly payroll computation',  time: '9:00 AM' },
+      { month: 'Nov', day: '02', soon: false, title: 'Staff Meeting',                      sub: 'HR Department Meeting',        time: '10:00 AM' },
+      { month: 'Nov', day: '15', soon: false, title: 'Deadline: Leave Credits Update',     sub: 'Update employee leave credits', time: '5:00 PM' },
+    ],
+  };
+}
+</script>
+</body>
+</html>

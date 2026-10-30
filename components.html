@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1473E6">
+  <title>TDC HRIS — Components</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png">
+  <link rel="icon" href="assets/img/favicon.ico" sizes="any">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <!-- Shared dashboard logic (sidebar, toast, notifications, modal plumbing) -->
+  <script src="assets/js/main.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="assets/js/tailwind-config.js"></script>
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="font-poppins text-gray-800 antialiased" x-data="components()" x-cloak>
+
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<!-- ════ MOBILE OVERLAY ════ -->
+<div id="sidebar-overlay"
+     class="fixed inset-0 bg-gray-900/50 z-20 lg:hidden"
+     aria-hidden="true"
+     x-show="mobileOpen"
+     x-transition.opacity
+     @click="closeMobileSidebar()"
+     style="display:none"></div>
+
+<!-- ════ TOAST ════ -->
+<div id="toast" role="status" aria-live="polite" aria-atomic="true" :class="{ show: toast.show }" :data-type="toast.type">
+  <div class="toast-icon" :class="toastStyle.bg" aria-hidden="true">
+    <svg class="w-5 h-5" :class="toastStyle.color" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" :d="toastStyle.icon"/></svg>
+  </div>
+  <div class="min-w-0 flex-1">
+    <p class="toast-title" x-text="toast.title"></p>
+    <p class="toast-msg" x-text="toast.msg"></p>
+  </div>
+  <button type="button" class="toast-close" @click="hideToast()" aria-label="Dismiss notification">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+  </button>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     MODAL SECTION — "Add New Employee"
+     (page-specific: lives in this page only, not in main.js)
+════════════════════════════════════════════════ -->
+<div id="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title" :class="{ open: modalOpen }"
+     @keydown.escape="closeModal()" @click="if ($event.target.id === 'modal-backdrop') closeModal()">
+  <div id="modal-dialog" x-ref="dialog" @keydown.tab="trapFocus($event)">
+    <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+      <div><h2 id="modal-title" class="text-lg font-bold text-gray-900">Approve leave request</h2>
+      <p class="text-xs text-gray-400 mt-0.5">This sends a notification to the employee.</p></div>
+      <button type="button" @click="closeModal()" class="p-2 rounded-xl text-gray-400 hover:bg-gray-100" aria-label="Close dialog">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+    </div>
+    <div class="px-6 py-5 space-y-4">
+      <div><label for="m-note" class="block text-xs font-semibold text-gray-600 mb-1.5">Note to employee</label>
+      <textarea id="m-note" rows="3" class="field resize-none" placeholder="Optional message…"></textarea></div>
+    </div>
+    <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
+      <button type="button" @click="closeModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-100 min-h-[40px]">Cancel</button>
+      <button type="button" @click="closeModal(); showToast('Leave request approved.', 'success', 'Approved')" class="px-6 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 text-white hover:bg-brand-700 min-h-[40px]">Approve</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     LAYOUT SHELL
+════════════════════════════════════════════════ -->
+<div class="flex min-h-[100dvh]">
+
+  <!-- ════════════════════════════════════════════
+       SIDEBAR SECTION (shared markup + shared data
+       from main.js: navSections, sidebarCollapsed, mobileOpen)
+  ════════════════════════════════════════════════ -->
+  <aside id="sidebar"
+         aria-label="Primary navigation"
+         class="bg-white flex flex-col shadow-card flex-shrink-0 relative z-30"
+         :class="{ collapsed: sidebarCollapsed, 'mobile-open': mobileOpen }">
+
+    <!-- Logo -->
+    <div class="logo-wrap flex items-center px-4 py-4 border-b border-gray-100 flex-shrink-0">
+      <img src="assets/img/tdc-logo-full.png" alt="Tagum Doctors College, Inc." class="logo-full w-full h-auto max-h-11 object-contain object-left">
+      <img src="assets/img/tdc-mark.png" alt="Tagum Doctors College" width="40" height="40" class="logo-mark w-10 h-10 object-contain">
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 sidebar-scroll py-3 px-2" aria-label="Primary">
+      <template x-for="section in navSections" :key="section.label">
+        <div>
+          <p class="nav-section-label px-3 mb-2 mt-4 first:mt-0 text-[11.5px] font-semibold text-gray-400 uppercase tracking-wider" x-text="section.label"></p>
+          <ul class="space-y-0.5" role="list">
+            <template x-for="item in section.items" :key="item.name">
+              <li>
+                <a :href="item.href" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+                   :aria-current="item.active ? 'page' : null" :title="item.name">
+                  <svg class="w-5 h-5 flex-shrink-0" :class="item.active ? 'text-brand-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon"/>
+                  </svg>
+                  <span class="nav-label" x-text="item.name"></span>
+                </a>
+              </li>
+            </template>
+          </ul>
+        </div>
+      </template>
+    </nav>
+
+    <!-- User -->
+    <div class="border-t border-gray-100 px-3 py-4 flex-shrink-0">
+      <div class="user-wrap flex items-center gap-3">
+        <div class="user-avatar w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center flex-shrink-0 text-white text-xs font-bold" aria-hidden="true">JD</div>
+        <div class="user-info min-w-0">
+          <p class="text-sm font-semibold text-gray-800 truncate">Juan Dela Cruz</p>
+          <p class="text-xs text-gray-500 truncate">HR Manager</p>
+        </div>
+        <button class="user-info ms-auto p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                aria-label="Sign out" onclick="location.href='login.html'">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══════════════════════════════════ -->
+  <div class="flex-1 flex flex-col min-w-0">
+
+    <!-- ════════════════════════════════════════════
+         HEADER SECTION (shared markup + shared data
+         from main.js: toast, notifications, signed-in user)
+    ════════════════════════════════════════════════ -->
+    <header class="sticky top-0 z-10 bg-white border-b border-gray-100 shadow-sm">
+      <div class="flex items-center gap-3 px-4 sm:px-6 py-3.5">
+        <!-- Desktop sidebar toggle -->
+        <button id="collapse-btn"
+                class="hidden lg:flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-brand-600 transition-colors flex-shrink-0"
+                :class="{ 'is-collapsed': sidebarCollapsed }"
+                @click="sidebarCollapsed = !sidebarCollapsed"
+                :aria-expanded="(!sidebarCollapsed).toString()" aria-controls="sidebar"
+                :aria-label="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v18"/>
+          </svg>
+        </button>
+
+        <!-- Mobile menu btn -->
+        <button id="menu-btn"
+                class="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+                @click="mobileOpen ? closeMobileSidebar() : openMobileSidebar()"
+                :aria-expanded="mobileOpen.toString()" aria-controls="sidebar"
+                :aria-label="mobileOpen ? 'Close navigation menu' : 'Open navigation menu'">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+
+        <!-- Breadcrumb -->
+        <nav aria-label="Breadcrumb" class="flex-1 min-w-0 text-sm">
+          <ol class="flex items-center gap-2">
+            <li class="text-gray-400">Workspace</li>
+            <li class="text-gray-300" aria-hidden="true">/</li>
+            <li class="font-semibold text-gray-900" aria-current="page">Components</li>
+          </ol>
+        </nav>
+
+        <div class="flex items-center gap-2 ms-auto">
+          <div class="relative">
+            <button @click="notifOpen = !notifOpen"
+                    class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+                    :aria-label="'Notifications' + (unreadCount ? ' (' + unreadCount + ' unread)' : '')"
+                    aria-haspopup="true" :aria-expanded="notifOpen.toString()" aria-controls="notif-panel">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+              <span class="absolute -top-0.5 -end-0.5 min-w-[17px] h-[17px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none flex items-center justify-center ring-2 ring-white" aria-hidden="true" x-show="unreadCount > 0" x-text="unreadCount"></span>
+            </button>
+
+            <div id="notif-panel" role="menu" aria-label="Notifications"
+                 x-show="notifOpen" x-transition
+                 @click.outside="notifOpen = false" @keydown.escape="notifOpen = false"
+                 class="absolute end-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-card border border-gray-100 z-40 overflow-hidden"
+                 style="display:none">
+              <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <h2 class="text-sm font-bold text-gray-900">Notifications</h2>
+                <button @click="markAllRead()" x-show="unreadCount > 0"
+                        class="text-xs font-semibold text-brand-600 hover:text-brand-700">Mark all as read</button>
+              </div>
+              <ul class="max-h-80 overflow-y-auto divide-y divide-gray-50" role="list">
+                <template x-for="n in notifications" :key="n.id">
+                  <li>
+                    <button @click="markRead(n)" class="w-full flex items-start gap-3 px-4 py-3 text-start hover:bg-gray-50/60 transition-colors" :class="{ 'bg-brand-50/40': !n.read }">
+                      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" :class="n.iconBg" aria-hidden="true">
+                        <svg class="w-4 h-4" :class="n.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="n.icon"/></svg>
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium text-gray-800 truncate" x-text="n.title"></p>
+                        <p class="text-xs text-gray-500 mt-0.5" x-text="n.message"></p>
+                        <p class="text-xs text-gray-500 mt-1" x-text="n.time"></p>
+                      </div>
+                      <span class="w-2 h-2 rounded-full bg-brand-500 flex-shrink-0 mt-1.5" aria-hidden="true" x-show="!n.read"></span>
+                    </button>
+                  </li>
+                </template>
+                <li x-show="notifications.length === 0">
+                  <p class="px-4 py-8 text-center text-sm text-gray-400">You're all caught up.</p>
+                </li>
+              </ul>
+              <div class="px-4 py-3 border-t border-gray-100 text-center">
+                <a href="#" class="text-xs font-semibold text-brand-600 hover:text-brand-700">View all notifications</a>
+              </div>
+            </div>
+          </div>
+          <!-- Signed-in user -->
+          <div class="flex items-center gap-3 ms-1 ps-3 sm:ps-4 border-s border-gray-200">
+            <div class="hidden sm:block text-end leading-tight">
+              <p class="text-sm font-semibold text-gray-900 whitespace-nowrap">Juan Dela Cruz</p>
+              <p class="text-[11.5px] font-medium text-gray-500 whitespace-nowrap">HR Manager</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ring-2 ring-white shadow-sm" role="img" aria-label="Juan Dela Cruz">JD</div>
+            <button type="button" class="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Sign out" onclick="location.href='login.html'" title="Sign out">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ════════════════════════════════════════════
+         MAIN PAGE SECTION (page-specific content: this
+         page's stat cards, chart, tables, etc.)
+    ════════════════════════════════════════════════ -->
+    <main id="main" tabindex="-1" class="flex-1 px-4 sm:px-6 py-6 space-y-5 max-w-[1200px] mx-auto w-full">
+      <div>
+        <p class="text-[11.5px] font-semibold text-brand-600 uppercase tracking-[.18em]">Design system</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-900 mt-1">Components</h1>
+        <p class="text-sm text-gray-500 mt-1">Every UI piece used across TDC HRIS, in one place.</p>
+      </div>
+      <section id="typography" aria-labelledby="typography-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="typography-h" class="text-base font-bold text-gray-900">Typography</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Poppins. The scale is set once in <code class="font-semibold">assets/js/tailwind-config.js</code>, so every page stays consistent.</p>
+        <div class="divide-y divide-gray-100">
+          <div class="flex flex-wrap items-baseline justify-between gap-2 py-3"><p class="text-xl sm:text-2xl font-bold text-gray-900">Page title</p><p class="text-xs text-gray-500">text-xl / sm:text-2xl · 20–23px · bold</p></div>
+          <div class="flex flex-wrap items-baseline justify-between gap-2 py-3"><p class="display-num font-bold text-gray-900">302,000</p><p class="text-xs text-gray-500">.display-num · 24–30px · stat numbers</p></div>
+          <div class="flex flex-wrap items-baseline justify-between gap-2 py-3"><p class="text-lg font-bold text-gray-900">Modal title</p><p class="text-xs text-gray-500">text-lg · 17.5px · bold</p></div>
+          <div class="flex flex-wrap items-baseline justify-between gap-2 py-3"><p class="text-base font-bold text-gray-900">Card title</p><p class="text-xs text-gray-500">text-base · 15.5px · bold</p></div>
+          <div class="flex flex-wrap items-baseline justify-between gap-2 py-3"><p class="text-sm text-gray-700">Body text, buttons, inputs and table cells</p><p class="text-xs text-gray-500">text-sm · 13.5px · regular / semibold</p></div>
+          <div class="flex flex-wrap items-baseline justify-between gap-2 py-3"><p class="text-xs font-semibold text-gray-600">Form label or caption</p><p class="text-xs text-gray-500">text-xs · 12.5px · semibold</p></div>
+          <div class="flex flex-wrap items-baseline justify-between gap-2 py-3"><p class="text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Table header / section label</p><p class="text-xs text-gray-500">text-[11.5px] · 11.5px · uppercase (smallest size used)</p></div>
+        </div>
+      </section>
+      <section id="buttons" aria-labelledby="buttons-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="buttons-h" class="text-base font-bold text-gray-900">Buttons</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Primary, secondary, ghost, danger, disabled and icon variants.</p>
+        <div class="flex flex-wrap items-center gap-3">
+          <button class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-brand-600 text-white hover:bg-brand-700 shadow-sm">Primary</button>
+          <button class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-white text-gray-700 border border-gray-200 hover:bg-gray-50">Secondary</button>
+          <button class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] text-brand-600 hover:bg-brand-50">Ghost</button>
+          <button class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-red-500 text-white hover:bg-red-600">Danger</button>
+          <button class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-brand-600 text-white opacity-50 cursor-not-allowed" disabled>Disabled</button>
+          <button class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-brand-600 text-white hover:bg-brand-700 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> With icon</button>
+          <button class="w-10 h-10 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 flex items-center justify-center" aria-label="Settings"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/></svg></button>
+        </div>
+      </section>
+      <section id="actions" aria-labelledby="actions-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="actions-h" class="text-base font-bold text-gray-900">Action buttons</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">View, edit, delete, download and other row or page actions. Icon-only buttons always carry an aria-label and a tooltip.</p>
+
+        <p class="text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Icon buttons (compact, for table rows)</p>
+        <div class="flex flex-wrap items-center gap-1 mb-6"><button type="button" @click="showToast('Opening employee profile.', 'info', 'View')" class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-brand-600 hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="View" title="View"><svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button><button type="button" @click="showToast('Editing enabled.', 'info', 'Edit')" class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-amber-600 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Edit" title="Edit"><svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button><button type="button" @click="showToast('Record duplicated.', 'success', 'Duplicated')" class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Duplicate" title="Duplicate"><svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg></button><button type="button" @click="showToast('Download started.', 'success', 'Download')" class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Download" title="Download"><svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button><button type="button" @click="showToast('Sending to printer…', 'info', 'Print')" class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Print" title="Print"><svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button><button type="button" @click="showToast('Record archived.', 'warning', 'Archived')" class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Archive" title="Archive"><svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg></button><button type="button" @click="showToast('Record deleted.', 'error', 'Deleted')" class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-red-500 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Delete" title="Delete"><svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button><button type="button" class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="More actions" title="More actions"><svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg></button></div>
+
+        <p class="text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Outlined icon buttons</p>
+        <div class="flex flex-wrap items-center gap-2 mb-6"><button type="button" @click="showToast('Opening employee profile.', 'info', 'View')" class="w-10 h-10 rounded-xl border flex items-center justify-center transition-colors text-brand-600 border-brand-200 hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="View" title="View"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button><button type="button" @click="showToast('Editing enabled.', 'info', 'Edit')" class="w-10 h-10 rounded-xl border flex items-center justify-center transition-colors text-amber-600 border-amber-200 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Edit" title="Edit"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button><button type="button" @click="showToast('Request approved.', 'success', 'Approved')" class="w-10 h-10 rounded-xl border flex items-center justify-center transition-colors text-emerald-600 border-emerald-200 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Approve" title="Approve"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></button><button type="button" @click="showToast('Request rejected.', 'error', 'Rejected')" class="w-10 h-10 rounded-xl border flex items-center justify-center transition-colors text-red-500 border-red-200 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Reject" title="Reject"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button><button type="button" @click="showToast('Data refreshed.', 'success', 'Refreshed')" class="w-10 h-10 rounded-xl border flex items-center justify-center transition-colors text-gray-600 border-gray-200 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Refresh" title="Refresh"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button><button type="button" @click="showToast('Record deleted.', 'error', 'Deleted')" class="w-10 h-10 rounded-xl border flex items-center justify-center transition-colors text-red-500 border-red-200 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Delete" title="Delete"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></div>
+
+        <p class="text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Tonal buttons with label</p>
+        <div class="flex flex-wrap items-center gap-3 mb-6"><button type="button" @click="showToast('Opening employee profile.', 'info', 'View')" class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] flex items-center gap-2 bg-brand-50 text-brand-700 hover:bg-brand-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> View</button><button type="button" @click="showToast('Editing enabled.', 'info', 'Edit')" class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] flex items-center gap-2 bg-amber-50 text-amber-700 hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg> Edit</button><button type="button" @click="showToast('Export started.', 'success', 'Export')" class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] flex items-center gap-2 bg-gray-100 text-gray-700 hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg> Export</button><button type="button" @click="showToast('Request approved.', 'success', 'Approved')" class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] flex items-center gap-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Approve</button><button type="button" @click="showToast('Record deleted.', 'error', 'Deleted')" class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] flex items-center gap-2 bg-red-50 text-red-600 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Delete</button></div>
+
+        <p class="text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Solid and disabled</p>
+        <div class="flex flex-wrap items-center gap-3 mb-6"><button type="button" @click="showToast('Employee added.', 'success', 'Added')" class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] flex items-center gap-2 bg-brand-600 text-white hover:bg-brand-700 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> Add Employee</button><button type="button" @click="showToast('Report exported.', 'success', 'Export')" class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] flex items-center gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg> Export</button><button type="button" @click="showToast('Record deleted.', 'error', 'Deleted')" class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] flex items-center gap-2 bg-red-500 text-white hover:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Delete</button><button type="button" disabled class="px-4 py-2.5 rounded-xl text-sm font-semibold min-h-[40px] flex items-center gap-2 bg-red-500 text-white opacity-50 cursor-not-allowed"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Delete</button></div>
+
+        <p class="text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Row actions with delete confirmation (try it)</p>
+        <div x-data="{ confirming: null, rows: [ {id:1,name:'Daniel Garcia',dept:'Academics'}, {id:2,name:'Angela Cruz',dept:'Finance'}, {id:3,name:'Mark Reyes',dept:'Human Resources'} ], remove(r) { this.rows = this.rows.filter(x => x.id !== r.id); this.confirming = null; showToast(r.name + ' was deleted.', 'error', 'Deleted'); }, reset() { this.confirming = null; this.rows = [ {id:1,name:'Daniel Garcia',dept:'Academics'}, {id:2,name:'Angela Cruz',dept:'Finance'}, {id:3,name:'Mark Reyes',dept:'Human Resources'} ]; } }">
+          <div class="tbl-wrap"><table class="w-full text-sm" style="min-inline-size:30rem">
+            <thead class="bg-brand-50/50"><tr class="text-left">
+              <th scope="col" class="px-4 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
+              <th scope="col" class="px-4 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Department</th>
+              <th scope="col" class="px-4 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th></tr></thead>
+            <tbody class="divide-y divide-gray-100">
+              <template x-for="r in rows" :key="r.id">
+                <tr class="hover:bg-gray-50/60">
+                  <td class="px-4 py-2.5 font-semibold text-gray-800" x-text="r.name"></td>
+                  <td class="px-4 py-2.5 text-gray-600" x-text="r.dept"></td>
+                  <td class="px-4 py-2.5">
+              <template x-if="confirming !== r.id">
+                <div class="flex items-center justify-end gap-0.5">
+                  <button type="button" @click="showToast('Opening profile.', 'info', 'View')" class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-brand-600 hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="View" title="View"><svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button>
+                  <button type="button" @click="showToast('Editing enabled.', 'info', 'Edit')" class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-amber-600 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Edit" title="Edit"><svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                  <button type="button" @click="confirming = r.id" class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-red-500 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" :aria-label="'Delete ' + r.name" title="Delete"><svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                </div>
+              </template>
+              <template x-if="confirming === r.id">
+                <div class="flex items-center justify-end gap-1.5">
+                  <span class="text-xs font-semibold text-gray-500 me-1">Delete?</span>
+                  <button type="button" @click="remove(r)" class="px-3 h-8 rounded-lg text-xs font-semibold bg-red-500 text-white hover:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400">Yes</button>
+                  <button type="button" @click="confirming = null" class="px-3 h-8 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400">No</button>
+                </div>
+              </template>
+                  </td>
+                </tr>
+              </template>
+              <tr x-show="rows.length === 0" style="display:none"><td colspan="3" class="px-4 py-8 text-center text-sm text-gray-500">All rows deleted. <button type="button" @click="reset()" class="font-semibold text-brand-600 hover:underline">Reset demo</button></td></tr>
+            </tbody></table></div>
+        </div>
+      </section>
+      <section id="inputs" aria-labelledby="inputs-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="inputs-h" class="text-base font-bold text-gray-900">Text inputs</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Text, email, number, with icon, error and disabled states, plus a textarea.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div><label for="i1" class="block text-xs font-semibold text-gray-600 mb-1.5">Full name</label><input id="i1" class="field" placeholder="e.g. Alex Rivera"></div>
+          <div><label for="i2" class="block text-xs font-semibold text-gray-600 mb-1.5">Work email</label><input id="i2" type="email" class="field" placeholder="name@tdc.edu.ph"></div>
+          <div><label for="i3" class="block text-xs font-semibold text-gray-600 mb-1.5">Monthly salary (₱)</label><input id="i3" type="number" min="0" class="field" placeholder="0.00"></div>
+          <div><label for="i4" class="block text-xs font-semibold text-gray-600 mb-1.5">With icon</label><div class="relative"><span class="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg></span><input id="i4" type="search" class="field ps-9" placeholder="Search…"></div></div>
+          <div><label for="i5" class="block text-xs font-semibold text-gray-600 mb-1.5">Error state</label><input id="i5" class="field error" value="EMP-12" aria-describedby="i5e"><p id="i5e" class="mt-1 text-xs text-red-500" role="alert">Employee ID must be 8 characters.</p></div>
+          <div><label for="i6" class="block text-xs font-semibold text-gray-600 mb-1.5">Disabled</label><input id="i6" class="field bg-gray-50 text-gray-400 cursor-not-allowed" value="Locked field" disabled></div>
+          <div class="md:col-span-2 xl:col-span-3"><label for="i7" class="block text-xs font-semibold text-gray-600 mb-1.5">Textarea</label><textarea id="i7" rows="3" class="field resize-none" placeholder="Write a short note…"></textarea></div>
+        </div>
+      </section>
+      <section id="pickers" aria-labelledby="pickers-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="pickers-h" class="text-base font-bold text-gray-900">Select, date and time</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Native pickers styled with the shared field class.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div><label for="p1" class="block text-xs font-semibold text-gray-600 mb-1.5">Department</label><select id="p1" class="field"><option value="">Select department</option><option>Academics</option><option>Finance</option><option>Human Resources</option></select></div>
+          <div><label for="p2" class="block text-xs font-semibold text-gray-600 mb-1.5">Start date</label><input id="p2" type="date" class="field"></div>
+          <div><label for="p3" class="block text-xs font-semibold text-gray-600 mb-1.5">Time in</label><input id="p3" type="time" class="field" value="08:00"></div>
+          <div><label for="p4" class="block text-xs font-semibold text-gray-600 mb-1.5">Payroll month</label><input id="p4" type="month" class="field" value="2026-10"></div>
+        </div>
+      </section>
+      <section id="choices" aria-labelledby="choices-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="choices-h" class="text-base font-bold text-gray-900">Checkbox, radio and toggle</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Selection controls use the brand blue accent.</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <fieldset><legend class="block text-xs font-semibold text-gray-600 mb-1.5">Checkbox</legend>
+            <label class="flex items-center gap-2 text-sm text-gray-700 py-1"><input type="checkbox" class="w-4 h-4 accent-brand-600" checked> Email me leave updates</label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 py-1"><input type="checkbox" class="w-4 h-4 accent-brand-600"> Weekly attendance digest</label></fieldset>
+          <fieldset><legend class="block text-xs font-semibold text-gray-600 mb-1.5">Radio</legend>
+            <label class="flex items-center gap-2 text-sm text-gray-700 py-1"><input type="radio" name="r" class="w-4 h-4 accent-brand-600" checked> Regular</label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 py-1"><input type="radio" name="r" class="w-4 h-4 accent-brand-600"> Probationary</label></fieldset>
+          <div><span class="block text-xs font-semibold text-gray-600 mb-1.5">Toggle</span>
+            <div class="flex items-center gap-3 py-1" x-data="{ on: true }">
+              <button type="button" role="switch" :aria-checked="on.toString()" @click="on = !on" aria-label="Enable notifications"
+                      class="relative w-11 h-6 rounded-full transition-colors" :class="on ? 'bg-brand-600' : 'bg-gray-300'">
+                <span class="absolute top-0.5 start-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform" :class="on ? 'translate-x-5 rtl:-translate-x-5' : ''"></span></button>
+              <span class="text-sm text-gray-700" x-text="on ? 'Notifications on' : 'Notifications off'"></span>
+            </div></div>
+        </div>
+      </section>
+      <section id="toasts" aria-labelledby="toasts-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="toasts-h" class="text-base font-bold text-gray-900">Toast messages</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Call showToast(message, type, title). Auto-dismisses with a progress bar.</p>
+        <div class="flex flex-wrap gap-3">
+          <button @click="showToast('Employee record saved.', 'success', 'Saved')" class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-emerald-50 text-emerald-700 hover:bg-emerald-100">Success</button>
+          <button @click="showToast('Payroll cut-off is tomorrow at 5:00 PM.', 'info', 'Reminder')" class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-brand-50 text-brand-700 hover:bg-brand-100">Info</button>
+          <button @click="showToast('3 contracts expire within 30 days.', 'warning', 'Heads up')" class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-amber-50 text-amber-700 hover:bg-amber-100">Warning</button>
+          <button @click="showToast('Could not save changes. Try again.', 'error', 'Something went wrong')" class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-red-50 text-red-600 hover:bg-red-100">Error</button>
+        </div>
+      </section>
+      <section id="badges" aria-labelledby="badges-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="badges-h" class="text-base font-bold text-gray-900">Badges and status</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Status pills for leave, attendance and employment.</p>
+        <div class="flex flex-wrap gap-3"><span class="badge bg-emerald-50 text-emerald-700"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Approved</span><span class="badge bg-amber-50 text-amber-700"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Pending</span><span class="badge bg-red-50 text-red-600"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>Rejected</span><span class="badge bg-brand-50 text-brand-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>Active</span><span class="badge bg-sky-50 text-sky-700"><span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>On Leave</span><span class="badge bg-gray-100 text-gray-600"><span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>Inactive</span></div>
+      </section>
+      <section id="alerts" aria-labelledby="alerts-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="alerts-h" class="text-base font-bold text-gray-900">Inline alerts</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Persistent messages shown inside a page.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3"><div role="alert" class="flex items-start gap-3 p-4 rounded-xl border bg-emerald-50 border-emerald-100"><span class="text-emerald-700 mt-0.5"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span><div><p class="text-sm font-semibold text-emerald-700">Leave approved</p><p class="text-xs text-gray-600 mt-0.5">Maria’s vacation leave was approved.</p></div></div><div role="alert" class="flex items-start gap-3 p-4 rounded-xl border bg-brand-50 border-brand-100"><span class="text-brand-700 mt-0.5"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span><div><p class="text-sm font-semibold text-brand-700">New policy</p><p class="text-xs text-gray-600 mt-0.5">The 2027 holiday calendar is available.</p></div></div><div role="alert" class="flex items-start gap-3 p-4 rounded-xl border bg-amber-50 border-amber-100"><span class="text-amber-700 mt-0.5"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></span><div><p class="text-sm font-semibold text-amber-700">Missing documents</p><p class="text-xs text-gray-600 mt-0.5">2 new hires have incomplete requirements.</p></div></div><div role="alert" class="flex items-start gap-3 p-4 rounded-xl border bg-red-50 border-red-100"><span class="text-red-600 mt-0.5"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></span><div><p class="text-sm font-semibold text-red-600">Sync failed</p><p class="text-xs text-gray-600 mt-0.5">Timekeeper data could not be imported.</p></div></div></div>
+      </section>
+      <section id="progress" aria-labelledby="progress-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="progress-h" class="text-base font-bold text-gray-900">Progress bars and avatars</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Progress for utilisation and completion; avatars for people.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="space-y-4"><div><div class="flex justify-between text-xs mb-1"><span class="font-medium text-gray-700">Onboarding complete</span><span class="font-semibold text-gray-900">82%</span></div><div class="h-2 bg-gray-100 rounded-full overflow-hidden" role="progressbar" aria-valuenow="82" aria-valuemin="0" aria-valuemax="100" aria-label="Onboarding complete"><div class="h-full rounded-full bg-brand-600" style="width:82%"></div></div></div><div><div class="flex justify-between text-xs mb-1"><span class="font-medium text-gray-700">Leave credits used</span><span class="font-semibold text-gray-900">45%</span></div><div class="h-2 bg-gray-100 rounded-full overflow-hidden" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" aria-label="Leave credits used"><div class="h-full rounded-full bg-sky-500" style="width:45%"></div></div></div><div><div class="flex justify-between text-xs mb-1"><span class="font-medium text-gray-700">Documents submitted</span><span class="font-semibold text-gray-900">28%</span></div><div class="h-2 bg-gray-100 rounded-full overflow-hidden" role="progressbar" aria-valuenow="28" aria-valuemin="0" aria-valuemax="100" aria-label="Documents submitted"><div class="h-full rounded-full bg-amber-400" style="width:28%"></div></div></div></div><div class="flex items-center gap-3 flex-wrap"><div class="w-8 h-8 text-[11.5px] rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white font-bold">JD</div><div class="w-10 h-10 text-xs rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white font-bold">MS</div><div class="w-14 h-14 text-sm rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white font-bold">AC</div><div class="flex -space-x-2 ms-4"><div class="w-9 h-9 rounded-full border-2 border-white bg-brand-100 text-brand-700 flex items-center justify-center text-[11.5px] font-bold">PM</div><div class="w-9 h-9 rounded-full border-2 border-white bg-sky-100 text-sky-700 flex items-center justify-center text-[11.5px] font-bold">DG</div><div class="w-9 h-9 rounded-full border-2 border-white bg-blue-200 text-blue-800 flex items-center justify-center text-[11.5px] font-bold">KB</div><div class="w-9 h-9 rounded-full border-2 border-white bg-gray-100 text-gray-600 flex items-center justify-center text-[11.5px] font-bold">+4</div></div></div></div>
+      </section>
+      <section id="tabs" aria-labelledby="tabs-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="tabs-h" class="text-base font-bold text-gray-900">Tabs</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Accessible tab list with keyboard focus.</p>
+        <div x-data="{ t: 'overview' }">
+          <div role="tablist" class="flex gap-1 border-b border-gray-100">
+            <template x-for="x in ['overview','documents','history']" :key="x">
+              <button role="tab" :aria-selected="(t === x).toString()" @click="t = x" x-text="x"
+                      class="px-4 py-2.5 text-sm font-semibold capitalize -mb-px border-b-2 transition-colors"
+                      :class="t === x ? 'border-brand-600 text-brand-700' : 'border-transparent text-gray-500 hover:text-gray-800'"></button>
+            </template>
+          </div>
+          <div role="tabpanel" class="pt-4 text-sm text-gray-600" x-text="'Content for the ' + t + ' tab.'"></div>
+        </div>
+      </section>
+      <section id="table" aria-labelledby="table-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="table-h" class="text-base font-bold text-gray-900">Table</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Responsive table with status badges.</p>
+        <div class="tbl-wrap"><table class="w-full text-sm" style="min-inline-size:30rem">
+          <thead class="bg-brand-50/50"><tr class="text-left">
+            <th scope="col" class="px-4 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
+            <th scope="col" class="px-4 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Department</th>
+            <th scope="col" class="px-4 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Status</th></tr></thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr class="hover:bg-gray-50/60"><td class="px-4 py-3 font-semibold text-gray-800">Daniel Garcia</td><td class="px-4 py-3 text-gray-600">Academics</td><td class="px-4 py-3"><span class="badge bg-brand-50 text-brand-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>Active</span></td></tr>
+            <tr class="hover:bg-gray-50/60"><td class="px-4 py-3 font-semibold text-gray-800">Angela Cruz</td><td class="px-4 py-3 text-gray-600">Finance</td><td class="px-4 py-3"><span class="badge bg-sky-50 text-sky-700"><span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>On Leave</span></td></tr>
+          </tbody></table></div>
+      </section>
+      <section id="nav" aria-labelledby="nav-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="nav-h" class="text-base font-bold text-gray-900">Breadcrumb and pagination</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Wayfinding components.</p>
+        <nav aria-label="Breadcrumb" class="text-sm mb-6"><ol class="flex items-center gap-2"><li class="text-gray-400">Workspace</li><li class="text-gray-300" aria-hidden="true">/</li><li class="text-gray-400">Employees</li><li class="text-gray-300" aria-hidden="true">/</li><li class="font-semibold text-gray-900" aria-current="page">Daniel Garcia</li></ol></nav>
+        <div x-data="{ page: 1, total: 3 }" class="flex justify-end">
+          <nav aria-label="Pagination" class="flex items-center gap-2">
+            <button type="button" @click="page--" :disabled="page === 1"
+                    class="px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:text-gray-300 disabled:hover:bg-white disabled:cursor-not-allowed">← Prev</button>
+            <template x-for="n in total" :key="n">
+              <button type="button" @click="page = n" x-text="n" :aria-current="page === n ? 'page' : null"
+                      class="w-10 h-10 rounded-lg text-sm font-semibold transition-colors"
+                      :class="page === n ? 'bg-brand-600 text-white shadow-sm' : 'text-gray-600 hover:bg-brand-50'"></button>
+            </template>
+            <button type="button" @click="page++" :disabled="page === total"
+                    class="px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:text-gray-300 disabled:hover:bg-white disabled:cursor-not-allowed">Next →</button>
+          </nav>
+        </div>
+      </section>
+      <section id="cards" aria-labelledby="cards-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="cards-h" class="text-base font-bold text-gray-900">Stat card and modal</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">A KPI card and a confirmation dialog.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+          <article class="stat-card border border-gray-100 rounded-2xl p-5 shadow-card"><div class="flex items-start justify-between"><p class="text-xs font-semibold text-gray-500">Present Today</p>
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center" aria-hidden="true"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div></div>
+            <p class="display-num font-bold text-gray-900 mt-3">9</p><p class="text-[11.5px] text-gray-500 mt-1"><strong class="text-emerald-600">90%</strong> of active employees</p></article>
+          <div><button @click="openModal()" class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-brand-600 text-white hover:bg-brand-700 shadow-sm">Open modal</button>
+          <p class="text-xs text-gray-400 mt-2">Closes with Esc, the backdrop or Cancel. Focus is trapped inside.</p></div>
+        </div>
+      </section>
+      <section id="lists" aria-labelledby="lists-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="lists-h" class="text-base font-bold text-gray-900">List cards</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">One row standard for every dashboard list: 40px leading element, <code class="font-semibold">text-sm</code> semibold title, <code class="font-semibold">text-xs</code> gray subtitle, <code class="font-semibold">text-xs</code> gray meta on the right, <code class="font-semibold">py-3</code> rows with a divider. Card header: <code class="font-semibold">text-base</code> bold title plus a <code class="font-semibold">View All</code> link.</p>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+
+          <div class="border border-gray-100 rounded-2xl p-5">
+            <div class="flex items-center justify-between gap-3"><h3 class="text-base font-bold text-gray-900">Recent Activities</h3><a href="#" class="text-sm font-semibold text-brand-600 hover:text-brand-700">View All</a></div>
+            <ul class="mt-3 divide-y divide-gray-100" role="list">
+              <li class="flex items-center gap-3 py-3">
+                <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center flex-shrink-0" aria-hidden="true"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg></div>
+                <div class="min-w-0 flex-1"><p class="text-sm font-semibold text-gray-900 truncate">New employee added</p><p class="text-xs text-gray-500 mt-0.5 truncate">Juan Dela Cruz was added.</p></div>
+                <span class="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">2 min ago</span>
+              </li>
+              <li class="flex items-center gap-3 py-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0" aria-hidden="true"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"/></svg></div>
+                <div class="min-w-0 flex-1"><p class="text-sm font-semibold text-gray-900 truncate">Leave request submitted</p><p class="text-xs text-gray-500 mt-0.5 truncate">Maria Santos, vacation leave.</p></div>
+                <span class="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">35 min ago</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="border border-gray-100 rounded-2xl p-5">
+            <div class="flex items-center justify-between gap-3"><h3 class="text-base font-bold text-gray-900">Leave Requests</h3><a href="#" class="text-sm font-semibold text-brand-600 hover:text-brand-700">View All</a></div>
+            <ul class="mt-3 divide-y divide-gray-100" role="list">
+              <li class="flex items-center gap-3 py-3">
+                <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold flex-shrink-0" aria-hidden="true">MS</div>
+                <div class="min-w-0 flex-1"><p class="text-sm font-semibold text-gray-900 truncate">Maria Santos</p><p class="text-xs text-gray-500 mt-0.5 truncate">Faculty</p></div>
+                <div class="flex flex-col items-end gap-1 flex-shrink-0"><span class="px-2 py-0.5 rounded-md text-[11.5px] font-semibold whitespace-nowrap bg-amber-50 text-amber-600">Vacation Leave</span><span class="text-xs text-gray-500">Oct 30, 2026</span></div>
+              </li>
+              <li class="flex items-center gap-3 py-3">
+                <div class="w-10 h-10 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-xs font-bold flex-shrink-0" aria-hidden="true">JD</div>
+                <div class="min-w-0 flex-1"><p class="text-sm font-semibold text-gray-900 truncate">John Dela Cruz</p><p class="text-xs text-gray-500 mt-0.5 truncate">IT Staff</p></div>
+                <div class="flex flex-col items-end gap-1 flex-shrink-0"><span class="px-2 py-0.5 rounded-md text-[11.5px] font-semibold whitespace-nowrap bg-red-50 text-red-500">Sick Leave</span><span class="text-xs text-gray-500">Oct 29, 2026</span></div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="border border-gray-100 rounded-2xl p-5">
+            <div class="flex items-center justify-between gap-3"><h3 class="text-base font-bold text-gray-900">Upcoming Events</h3><a href="#" class="text-sm font-semibold text-brand-600 hover:text-brand-700">View All</a></div>
+            <ul class="mt-3 divide-y divide-gray-100" role="list">
+              <li class="flex items-center gap-3 py-3">
+                <div class="w-10 h-10 rounded-xl flex flex-col items-center justify-center flex-shrink-0 leading-none bg-red-50 text-red-500" aria-hidden="true"><span class="text-[10px] font-semibold uppercase tracking-wide">Oct</span><span class="text-sm font-bold mt-0.5">31</span></div>
+                <div class="min-w-0 flex-1"><p class="text-sm font-semibold text-gray-900 truncate">Payroll Processing</p><p class="text-xs text-gray-500 mt-0.5 truncate">Monthly payroll computation</p></div>
+                <span class="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">9:00 AM</span>
+              </li>
+              <li class="flex items-center gap-3 py-3">
+                <div class="w-10 h-10 rounded-xl flex flex-col items-center justify-center flex-shrink-0 leading-none bg-slate-100 text-slate-600" aria-hidden="true"><span class="text-[10px] font-semibold uppercase tracking-wide">Nov</span><span class="text-sm font-bold mt-0.5">02</span></div>
+                <div class="min-w-0 flex-1"><p class="text-sm font-semibold text-gray-900 truncate">Staff Meeting</p><p class="text-xs text-gray-500 mt-0.5 truncate">HR Department Meeting</p></div>
+                <span class="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">10:00 AM</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="clock" aria-labelledby="clock-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="clock-h" class="text-base font-bold text-gray-900">Date and time</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Live Philippine time with no card behind it. Add <code class="font-semibold">x-data="liveClock()"</code> (from <code class="font-semibold">main.js</code>); it exposes <code class="font-semibold">hm</code>, <code class="font-semibold">ampm</code> and <code class="font-semibold">longDate</code>.</p>
+        <div x-data="liveClock()" role="timer" aria-label="Current date and time">
+          <p class="flex items-baseline gap-2 text-gray-900 tabular-nums leading-none">
+            <span class="text-5xl sm:text-6xl font-bold tracking-tight" x-text="hm"></span>
+            <span class="text-xl sm:text-2xl font-semibold text-brand-600" x-text="ampm"></span>
+          </p>
+          <p class="text-base sm:text-lg font-medium text-gray-500 mt-2.5" x-text="longDate"></p>
+        </div>
+      </section>
+
+      <section id="calendar" aria-labelledby="calendar-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="calendar-h" class="text-base font-bold text-gray-900">Calendar</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Month view with today, selection, holiday and leave markers.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start" x-data="calendar()">
+          <div class="max-w-sm w-full">
+            <div class="flex items-center justify-between mb-3">
+              <button type="button" @click="move(-1)" class="w-9 h-9 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center" aria-label="Previous month"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+              <p class="text-sm font-bold text-gray-900" x-text="label" aria-live="polite"></p>
+              <button type="button" @click="move(1)" class="w-9 h-9 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center" aria-label="Next month"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>
+            </div>
+            <div class="grid grid-cols-7 text-center"><span class="text-[11.5px] font-semibold text-gray-400 uppercase py-1">Su</span><span class="text-[11.5px] font-semibold text-gray-400 uppercase py-1">Mo</span><span class="text-[11.5px] font-semibold text-gray-400 uppercase py-1">Tu</span><span class="text-[11.5px] font-semibold text-gray-400 uppercase py-1">We</span><span class="text-[11.5px] font-semibold text-gray-400 uppercase py-1">Th</span><span class="text-[11.5px] font-semibold text-gray-400 uppercase py-1">Fr</span><span class="text-[11.5px] font-semibold text-gray-400 uppercase py-1">Sa</span></div>
+            <div class="grid grid-cols-7 gap-1 text-center">
+              <template x-for="(d, i) in days" :key="i">
+                <div class="aspect-square">
+                  <button type="button" x-show="d" @click="pick(d)" :aria-pressed="(selected === key(d)).toString()"
+                          class="relative w-full h-full rounded-lg text-sm font-medium transition-colors"
+                          :class="selected === key(d) ? 'bg-brand-600 text-white font-semibold' : (isToday(d) ? 'bg-brand-50 text-brand-700 font-bold' : 'text-gray-700 hover:bg-gray-50')">
+                    <span x-text="d"></span>
+                    <span x-show="marks[key(d)]" class="absolute bottom-1 start-1/2 -translate-x-1/2 w-1 h-1 rounded-full" :class="marks[key(d)] === 'holiday' ? 'bg-amber-400' : 'bg-sky-400'"></span>
+                  </button>
+                </div>
+              </template>
+            </div>
+          </div>
+          <div class="text-sm">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Selected date</p>
+            <p class="font-semibold text-gray-900" x-text="selectedText"></p>
+            <ul class="mt-4 space-y-2 text-xs text-gray-500">
+              <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-brand-600"></span> Selected</li>
+              <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-brand-100 border border-brand-300"></span> Today</li>
+              <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Holiday</li>
+              <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-400"></span> Approved leave</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+      <section id="dropdown" aria-labelledby="dropdown-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="dropdown-h" class="text-base font-bold text-gray-900">Dropdown menu and filter chips</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Click outside or press Esc to close the menu.</p>
+        <div class="space-y-6"><div class="relative inline-block" x-data="{ open: false }" @click.outside="open = false" @keydown.escape="open = false">
+          <button type="button" @click="open = !open" :aria-expanded="open.toString()" aria-haspopup="true"
+                  class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 min-h-[40px]">Actions <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></button>
+          <ul x-show="open" x-transition role="menu" style="display:none" class="absolute start-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-card py-1.5 z-20">
+            <li><a href="#" role="menuitem" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-50">View profile</a></li>
+            <li><a href="#" role="menuitem" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-50">Edit details</a></li>
+            <li class="border-t border-gray-100 mt-1 pt-1"><a href="#" role="menuitem" class="block px-4 py-2 text-sm text-red-500 hover:bg-red-50">Deactivate</a></li>
+          </ul>
+        </div><div class="flex flex-wrap gap-2" x-data="{ on: ['Academics'] }">
+          <template x-for="d in ['Academics','Finance','Registrar','Human Resources']" :key="d">
+            <button type="button" @click="on.includes(d) ? on = on.filter(x => x !== d) : on.push(d)" :aria-pressed="on.includes(d).toString()" x-text="d"
+                    class="px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors"
+                    :class="on.includes(d) ? 'bg-brand-600 border-brand-600 text-white' : 'bg-white border-gray-200 text-gray-600 hover:bg-brand-50'"></button>
+          </template>
+        </div></div>
+      </section>
+      <section id="accordion" aria-labelledby="accordion-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="accordion-h" class="text-base font-bold text-gray-900">Accordion</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Expandable FAQ rows.</p>
+        <div class="divide-y divide-gray-100 border border-gray-100 rounded-xl" x-data="{ o: 0 }">
+          <template x-for="(it, i) in [['How many leave credits do I get?','15 vacation and 7 sick days each year.'],['When is payroll processed?','On the 15th and last day of every month.'],['How do I file overtime?','Submit it in Timekeeper before the cut-off.']]" :key="i">
+            <div>
+              <button type="button" @click="o = o === i ? -1 : i" :aria-expanded="(o === i).toString()" class="w-full flex items-center justify-between px-4 py-3 text-start text-sm font-semibold text-gray-800 hover:bg-gray-50">
+                <span x-text="it[0]"></span>
+                <svg class="w-4 h-4 text-gray-400 transition-transform" :class="o === i ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+              <p x-show="o === i" x-transition class="px-4 pb-3 text-sm text-gray-500" x-text="it[1]"></p>
+            </div>
+          </template>
+        </div>
+      </section>
+      <section id="stepper" aria-labelledby="stepper-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="stepper-h" class="text-base font-bold text-gray-900">Stepper</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Progress through a multi-step flow.</p>
+        <div class="flex items-center max-w-xl" role="list" aria-label="Onboarding steps">
+          <div role="listitem" class="flex flex-col items-center gap-1"><div class="step-dot done">✓</div><span class="text-[11.5px] font-medium text-gray-400">Profile</span></div>
+          <div class="step-line done"></div>
+          <div role="listitem" class="flex flex-col items-center gap-1"><div class="step-dot active" aria-current="step">2</div><span class="text-[11.5px] font-semibold text-brand-600">Documents</span></div>
+          <div class="step-line"></div>
+          <div role="listitem" class="flex flex-col items-center gap-1"><div class="step-dot upcoming">3</div><span class="text-[11.5px] font-medium text-gray-400">Contract</span></div>
+          <div class="step-line"></div>
+          <div role="listitem" class="flex flex-col items-center gap-1"><div class="step-dot upcoming">4</div><span class="text-[11.5px] font-medium text-gray-400">Review</span></div>
+        </div>
+      </section>
+      <section id="upload" aria-labelledby="upload-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="upload-h" class="text-base font-bold text-gray-900">File upload</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Drop zone for documents and photos.</p>
+        <label class="upload-zone block max-w-md">
+          <div class="w-12 h-12 rounded-2xl bg-brand-100 flex items-center justify-center mx-auto mb-3 text-brand-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg></div>
+          <p class="text-sm font-medium text-gray-700 text-center">Drop files here or <span class="text-brand-600">browse</span></p>
+          <p class="text-xs text-gray-400 mt-1 text-center">PDF, PNG, JPG — max 5 MB</p>
+          <input type="file" class="sr-only" aria-label="Upload files">
+        </label>
+      </section>
+      <section id="empty" aria-labelledby="empty-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+        <h2 id="empty-h" class="text-base font-bold text-gray-900">Empty state</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Shown when a list has no results.</p>
+        <div class="text-center py-6 max-w-sm mx-auto">
+          <div class="w-14 h-14 rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center mx-auto mb-3"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+          <p class="text-sm font-semibold text-gray-900">No employees found</p>
+          <p class="text-xs text-gray-500 mt-1">Try a different filter or add a new team member.</p>
+          <button class="mt-4 px-4 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 text-white hover:bg-brand-700 min-h-[40px]">Add Employee</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="border-t border-gray-100 px-6 py-4 text-center text-xs text-gray-400">
+      Tagum Doctors College, Inc. &copy; 2026
+    </footer>
+  </div>
+</div>
+
+<script>
+function calendar() {
+  const now = new Date();
+  return {
+    y: now.getFullYear(), m: now.getMonth(), selected: null,
+    marks: { '2026-11-1': 'holiday', '2026-11-9': 'leave', '2026-11-30': 'holiday', '2026-12-25': 'holiday', '2026-12-30': 'holiday' },
+    get label() { return new Date(this.y, this.m, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); },
+    get days() {
+      const first = new Date(this.y, this.m, 1).getDay(), n = new Date(this.y, this.m + 1, 0).getDate();
+      return [...Array(first).fill(null), ...Array.from({ length: n }, (_, i) => i + 1)];
+    },
+    get selectedText() {
+      if (!this.selected) return 'None — pick a day';
+      const [y, m, d] = this.selected.split('-').map(Number);
+      return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    },
+    key(d) { return this.y + '-' + (this.m + 1) + '-' + d; },
+    isToday(d) { return d === now.getDate() && this.m === now.getMonth() && this.y === now.getFullYear(); },
+    move(n) { this.m += n; if (this.m < 0) { this.m = 11; this.y--; } if (this.m > 11) { this.m = 0; this.y++; } },
+    pick(d) { this.selected = this.key(d); },
+  };
+}
+function components() {
+  return {
+    ...sharedChrome('components.html'),
+    modalOpen: false,
+    openModal() { this.openModalCommon(); },
+    validateStep() { return true; },
+  };
+}
+</script>
+</body>
+</html>

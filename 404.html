@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1473E6">
+  <title>Page not found — TDC HRIS</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png">
+  <link rel="icon" href="assets/img/favicon.ico" sizes="any">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="assets/js/tailwind-config.js"></script>
+</head>
+<body class="font-poppins text-gray-800 antialiased bg-white">
+
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<div class="relative min-h-screen overflow-hidden flex flex-col bg-gradient-to-br from-brand-50/70 via-white to-white">
+  <!-- decorative rings -->
+  <div class="absolute -top-32 -start-32 w-[26rem] h-[26rem] rounded-full bg-brand-600/[.06]" aria-hidden="true"></div>
+  <div class="absolute -bottom-40 -end-32 w-[30rem] h-[30rem] rounded-full bg-brand-600/[.06]" aria-hidden="true"></div>
+
+  <header class="relative flex justify-center pt-10 px-4">
+    <a href="index.html" aria-label="TDCi Portal home">
+      <img src="assets/img/tdc-logo-full.png" alt="TDCi Portal — Tagum Doctors College, Inc." class="h-10 w-auto object-contain">
+    </a>
+  </header>
+
+  <main id="main" class="relative flex-1 flex items-center justify-center px-4 sm:px-6 py-10">
+    <div class="w-full max-w-lg text-center">
+      <p class="text-[7rem] sm:text-[9rem] font-bold leading-none tracking-tight bg-gradient-to-br from-brand-400 to-brand-700 bg-clip-text text-transparent select-none" aria-hidden="true">404</p>
+
+      <h1 class="text-xl sm:text-2xl font-bold text-brand-900 mt-4">Page not found</h1>
+      <p class="text-sm text-gray-500 mt-2 max-w-sm mx-auto">The page you are looking for doesn’t exist or may have been moved. Check the address, or head back to your dashboard.</p>
+
+      <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <a href="index.html"
+           class="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-sm transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          Back to dashboard
+        </a>
+        <button type="button" onclick="history.length > 1 ? history.back() : location.href='index.html'"
+                class="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+          Go back
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="relative text-center text-xs text-gray-400 pb-8 px-4">&copy; 2026 Tagum Doctors College, Inc.</footer>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1473E6">
+  <title>TDC HRIS — User Management</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png">
+  <link rel="icon" href="assets/img/favicon.ico" sizes="any">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <!-- Shared dashboard logic (sidebar, toast, notifications, modal plumbing) -->
+  <script src="assets/js/main.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="assets/js/tailwind-config.js"></script>
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="font-poppins text-gray-800 antialiased" x-data="users()" x-cloak>
+
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<!-- ════ MOBILE OVERLAY ════ -->
+<div id="sidebar-overlay"
+     class="fixed inset-0 bg-gray-900/50 z-20 lg:hidden"
+     aria-hidden="true"
+     x-show="mobileOpen"
+     x-transition.opacity
+     @click="closeMobileSidebar()"
+     style="display:none"></div>
+
+<!-- ════ TOAST ════ -->
+<div id="toast" role="status" aria-live="polite" aria-atomic="true" :class="{ show: toast.show }" :data-type="toast.type">
+  <div class="toast-icon" :class="toastStyle.bg" aria-hidden="true">
+    <svg class="w-5 h-5" :class="toastStyle.color" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" :d="toastStyle.icon"/></svg>
+  </div>
+  <div class="min-w-0 flex-1">
+    <p class="toast-title" x-text="toast.title"></p>
+    <p class="toast-msg" x-text="toast.msg"></p>
+  </div>
+  <button type="button" class="toast-close" @click="hideToast()" aria-label="Dismiss notification">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+  </button>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     LAYOUT SHELL
+════════════════════════════════════════════════ -->
+<div class="flex min-h-[100dvh]">
+
+  <!-- ════════════════════════════════════════════
+       SIDEBAR SECTION (shared markup + shared data
+       from main.js: navSections, sidebarCollapsed, mobileOpen)
+  ════════════════════════════════════════════════ -->
+  <aside id="sidebar"
+         aria-label="Primary navigation"
+         class="bg-white flex flex-col shadow-card flex-shrink-0 relative z-30"
+         :class="{ collapsed: sidebarCollapsed, 'mobile-open': mobileOpen }">
+
+    <!-- Logo -->
+    <div class="logo-wrap flex items-center px-4 py-4 border-b border-gray-100 flex-shrink-0">
+      <img src="assets/img/tdc-logo-full.png" alt="Tagum Doctors College, Inc." class="logo-full w-full h-auto max-h-11 object-contain object-left">
+      <img src="assets/img/tdc-mark.png" alt="Tagum Doctors College" width="40" height="40" class="logo-mark w-10 h-10 object-contain">
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 sidebar-scroll py-3 px-2" aria-label="Primary">
+      <template x-for="section in navSections" :key="section.label">
+        <div>
+          <p class="nav-section-label px-3 mb-2 mt-4 first:mt-0 text-[11.5px] font-semibold text-gray-400 uppercase tracking-wider" x-text="section.label"></p>
+          <ul class="space-y-0.5" role="list">
+            <template x-for="item in section.items" :key="item.name">
+              <li>
+                <a :href="item.href" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+                   :aria-current="item.active ? 'page' : null" :title="item.name">
+                  <svg class="w-5 h-5 flex-shrink-0" :class="item.active ? 'text-brand-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon"/>
+                  </svg>
+                  <span class="nav-label" x-text="item.name"></span>
+                </a>
+              </li>
+            </template>
+          </ul>
+        </div>
+      </template>
+    </nav>
+
+    <!-- User -->
+    <div class="border-t border-gray-100 px-3 py-4 flex-shrink-0">
+      <div class="user-wrap flex items-center gap-3">
+        <div class="user-avatar w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center flex-shrink-0 text-white text-xs font-bold" aria-hidden="true">JD</div>
+        <div class="user-info min-w-0">
+          <p class="text-sm font-semibold text-gray-800 truncate">Juan Dela Cruz</p>
+          <p class="text-xs text-gray-500 truncate">HR Manager</p>
+        </div>
+        <button class="user-info ms-auto p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                aria-label="Sign out" onclick="location.href='login.html'">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══════════════════════════════════ -->
+  <div class="flex-1 flex flex-col min-w-0">
+
+    <!-- ════════════════════════════════════════════
+         HEADER SECTION (shared markup + shared data
+         from main.js: toast, notifications, signed-in user)
+    ════════════════════════════════════════════════ -->
+    <header class="sticky top-0 z-10 bg-white border-b border-gray-100 shadow-sm">
+      <div class="flex items-center gap-3 px-4 sm:px-6 py-3.5">
+        <!-- Desktop sidebar toggle -->
+        <button id="collapse-btn"
+                class="hidden lg:flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-brand-600 transition-colors flex-shrink-0"
+                :class="{ 'is-collapsed': sidebarCollapsed }"
+                @click="sidebarCollapsed = !sidebarCollapsed"
+                :aria-expanded="(!sidebarCollapsed).toString()" aria-controls="sidebar"
+                :aria-label="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v18"/>
+          </svg>
+        </button>
+
+        <!-- Mobile menu btn -->
+        <button id="menu-btn"
+                class="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+                @click="mobileOpen ? closeMobileSidebar() : openMobileSidebar()"
+                :aria-expanded="mobileOpen.toString()" aria-controls="sidebar"
+                :aria-label="mobileOpen ? 'Close navigation menu' : 'Open navigation menu'">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+
+        <!-- Breadcrumb -->
+        <nav aria-label="Breadcrumb" class="flex-1 min-w-0 text-sm">
+          <ol class="flex items-center gap-2">
+            <li class="text-gray-400">Workspace</li>
+            <li class="text-gray-300" aria-hidden="true">/</li>
+            <li class="font-semibold text-gray-900" aria-current="page">User Management</li>
+          </ol>
+        </nav>
+
+        <div class="flex items-center gap-2 ms-auto">
+          <div class="relative">
+            <button @click="notifOpen = !notifOpen"
+                    class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+                    :aria-label="'Notifications' + (unreadCount ? ' (' + unreadCount + ' unread)' : '')"
+                    aria-haspopup="true" :aria-expanded="notifOpen.toString()" aria-controls="notif-panel">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+              <span class="absolute -top-0.5 -end-0.5 min-w-[17px] h-[17px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none flex items-center justify-center ring-2 ring-white" aria-hidden="true" x-show="unreadCount > 0" x-text="unreadCount"></span>
+            </button>
+
+            <div id="notif-panel" role="menu" aria-label="Notifications"
+                 x-show="notifOpen" x-transition
+                 @click.outside="notifOpen = false" @keydown.escape="notifOpen = false"
+                 class="absolute end-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-card border border-gray-100 z-40 overflow-hidden"
+                 style="display:none">
+              <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <h2 class="text-sm font-bold text-gray-900">Notifications</h2>
+                <button @click="markAllRead()" x-show="unreadCount > 0"
+                        class="text-xs font-semibold text-brand-600 hover:text-brand-700">Mark all as read</button>
+              </div>
+              <ul class="max-h-80 overflow-y-auto divide-y divide-gray-50" role="list">
+                <template x-for="n in notifications" :key="n.id">
+                  <li>
+                    <button @click="markRead(n)" class="w-full flex items-start gap-3 px-4 py-3 text-start hover:bg-gray-50/60 transition-colors" :class="{ 'bg-brand-50/40': !n.read }">
+                      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" :class="n.iconBg" aria-hidden="true">
+                        <svg class="w-4 h-4" :class="n.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="n.icon"/></svg>
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium text-gray-800 truncate" x-text="n.title"></p>
+                        <p class="text-xs text-gray-500 mt-0.5" x-text="n.message"></p>
+                        <p class="text-xs text-gray-500 mt-1" x-text="n.time"></p>
+                      </div>
+                      <span class="w-2 h-2 rounded-full bg-brand-500 flex-shrink-0 mt-1.5" aria-hidden="true" x-show="!n.read"></span>
+                    </button>
+                  </li>
+                </template>
+                <li x-show="notifications.length === 0">
+                  <p class="px-4 py-8 text-center text-sm text-gray-400">You're all caught up.</p>
+                </li>
+              </ul>
+              <div class="px-4 py-3 border-t border-gray-100 text-center">
+                <a href="#" class="text-xs font-semibold text-brand-600 hover:text-brand-700">View all notifications</a>
+              </div>
+            </div>
+          </div>
+          <!-- Signed-in user -->
+          <div class="flex items-center gap-3 ms-1 ps-3 sm:ps-4 border-s border-gray-200">
+            <div class="hidden sm:block text-end leading-tight">
+              <p class="text-sm font-semibold text-gray-900 whitespace-nowrap">Juan Dela Cruz</p>
+              <p class="text-[11.5px] font-medium text-gray-500 whitespace-nowrap">HR Manager</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ring-2 ring-white shadow-sm" role="img" aria-label="Juan Dela Cruz">JD</div>
+            <button type="button" class="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Sign out" onclick="location.href='login.html'" title="Sign out">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+
+    <!-- MAIN -->
+    <main id="main" tabindex="-1" class="flex-1 px-4 sm:px-6 py-6 space-y-5 max-w-[1600px] mx-auto w-full">
+
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-gray-900">User Management</h1>
+          <p class="text-sm text-gray-500 mt-1">Employee accounts used to sign in to the mobile app.</p>
+        </div>
+        <button type="button" @click="showToast('Account list exported as CSV.', 'success', 'Export ready')" class="flex items-center gap-2 px-3.5 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-lg transition-colors min-h-[40px]">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Export
+        </button>
+      </div>
+
+      <section aria-label="Account summary" class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        <template x-for="c in summary" :key="c.label">
+          <article class="bg-white rounded-2xl border border-gray-100 shadow-card p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" :class="[c.bg, c.color]" aria-hidden="true">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="c.icon"/></svg>
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs font-semibold text-gray-500 truncate" x-text="c.label"></p>
+              <p class="text-xl font-bold text-gray-900 leading-tight" x-text="c.value"></p>
+            </div>
+          </article>
+        </template>
+      </section>
+
+      <section aria-label="Employee accounts" class="bg-white rounded-2xl border border-gray-100 shadow-card overflow-hidden">
+        <div class="flex flex-wrap items-center gap-3 p-5 pb-4">
+          <div class="flex flex-wrap items-center gap-2 w-full">
+            <div class="relative flex-1 min-w-[12rem] lg:max-w-md">
+              <svg class="w-4 h-4 text-gray-400 absolute start-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+              <label for="usr-search" class="sr-only">Search accounts</label>
+              <input id="usr-search" type="search" x-model.trim="search" placeholder="Search name, ID or username"
+                     class="w-full min-h-[40px] ps-9 pe-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50/60 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-brand-400 transition-colors">
+            </div>
+            <label for="usr-filter-dept" class="sr-only">Filter by department</label>
+            <select id="usr-filter-dept" x-model="dept" class="min-h-[40px] px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-400">
+              <option value="">All departments</option>
+              <template x-for="d in departments" :key="d"><option :value="d" x-text="d"></option></template>
+            </select>
+            <label for="usr-filter-status" class="sr-only">Filter by account status</label>
+            <select id="usr-filter-status" x-model="status" class="min-h-[40px] px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-400">
+              <option value="">All statuses</option>
+              <option>Active</option><option>Not activated</option><option>Locked</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="tbl-wrap" tabindex="0" role="region" aria-label="Employee accounts">
+          <table class="w-full text-sm" style="min-inline-size:56rem">
+            <caption class="sr-only">Employee mobile app accounts</caption>
+            <thead class="bg-brand-50/50">
+              <tr class="text-left">
+                <th scope="col" class="px-5 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
+                <th scope="col" class="px-3 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Username</th>
+                <th scope="col" class="px-3 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Password</th>
+                <th scope="col" class="px-3 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Device</th>
+                <th scope="col" class="px-3 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Last login</th>
+                <th scope="col" class="px-3 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Mobile access</th>
+                <th scope="col" class="px-3 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                <th scope="col" class="px-5 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <template x-for="u in filtered" :key="u.empId">
+                <tr class="hover:bg-gray-50/60 transition-colors">
+                  <td class="px-5 py-3">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" :class="[u.bg, u.text]" aria-hidden="true" x-text="initials(u.name)"></div>
+                      <div class="min-w-0">
+                        <p class="text-sm font-semibold text-gray-900 whitespace-nowrap" x-text="u.name"></p>
+                        <p class="text-xs text-gray-500 mt-0.5" x-text="u.department"></p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-3 py-3 text-[13px] text-gray-600 whitespace-nowrap">
+                    <span x-text="u.empId"></span>
+                    <button type="button" @click="copy(u.empId)" class="ms-1 p-1 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50 align-middle" :aria-label="'Copy username for ' + u.name" title="Copy username">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    </button>
+                  </td>
+                  <td class="px-3 py-3 text-[13px] text-gray-400 whitespace-nowrap tracking-widest" aria-label="Hidden">••••••••</td>
+                  <td class="px-3 py-3 text-[13px] text-gray-600 whitespace-nowrap" x-text="u.device"></td>
+                  <td class="px-3 py-3 text-[13px] text-gray-600 whitespace-nowrap" x-text="u.lastLogin"></td>
+                  <td class="px-3 py-3">
+                    <button type="button" role="switch" :aria-checked="u.mobile.toString()" @click="toggleMobile(u)"
+                            :aria-label="'Mobile access for ' + u.name"
+                            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+                            :class="u.mobile ? 'bg-brand-600' : 'bg-gray-300'">
+                      <span class="inline-block h-4 w-4 rounded-full bg-white shadow transition-transform" :class="u.mobile ? 'translate-x-6' : 'translate-x-1'"></span>
+                    </button>
+                  </td>
+                  <td class="px-3 py-3">
+                    <span class="badge" :class="statusStyle(u.status).badge"><span class="w-1.5 h-1.5 rounded-full" :class="statusStyle(u.status).dot" aria-hidden="true"></span><span x-text="u.status"></span></span>
+                  </td>
+                  <td class="px-5 py-3">
+                    <div class="flex items-center justify-end gap-1">
+                      <button type="button" @click="resetPassword(u)" class="w-9 h-9 rounded-lg flex items-center justify-center text-brand-600 hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" :aria-label="'Reset password for ' + u.name" title="Reset password">
+                        <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                      </button>
+                      <button type="button" @click="toggleLock(u)" class="w-9 h-9 rounded-lg flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+                              :class="u.status === 'Locked' ? 'text-emerald-600 hover:bg-emerald-50' : 'text-amber-600 hover:bg-amber-50'"
+                              :aria-label="(u.status === 'Locked' ? 'Unlock ' : 'Lock ') + u.name" :title="u.status === 'Locked' ? 'Unlock account' : 'Lock account'">
+                        <svg x-show="u.status !== 'Locked'" class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        <svg x-show="u.status === 'Locked'" class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" style="display:none"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+              <tr x-show="filtered.length === 0" style="display:none">
+                <td colspan="8" class="px-5 py-12 text-center">
+                  <p class="text-sm font-semibold text-gray-900">No accounts found</p>
+                  <p class="text-xs text-gray-500 mt-1">Try a different search or filter.</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 px-5 py-3.5 border-t border-gray-100 text-xs text-gray-500">
+          <p>Showing <strong class="text-gray-700" x-text="filtered.length"></strong> of <strong class="text-gray-700" x-text="users.length"></strong> accounts</p>
+          <button type="button" x-show="search || dept || status" @click="search = ''; dept = ''; status = ''" class="font-semibold text-brand-600 hover:text-brand-700" style="display:none">Clear filters</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="border-t border-gray-100 px-6 py-4 text-center text-xs text-gray-400">
+      Tagum Doctors College, Inc. &copy; 2026
+    </footer>
+  </div>
+</div>
+
+<script>
+const _PAL = [['bg-rose-100','text-rose-600'],['bg-sky-100','text-sky-700'],['bg-violet-100','text-violet-600'],['bg-emerald-100','text-emerald-600'],['bg-amber-100','text-amber-600'],['bg-brand-100','text-brand-700']];
+function this_pal(i) { return _PAL[i % _PAL.length]; }
+function users() {
+  return {
+    ...sharedChrome('user.html'),
+    search: '', dept: '', status: '',
+    palette: [['bg-rose-100','text-rose-600'],['bg-sky-100','text-sky-700'],['bg-violet-100','text-violet-600'],['bg-emerald-100','text-emerald-600'],['bg-amber-100','text-amber-600'],['bg-brand-100','text-brand-700']],
+    users: [
+      ['Juan Dela Cruz','EMP-1001','Human Resources','iPhone 15','Today, 8:02 AM','Active'],
+      ['Maria Santos','EMP-1002','Academics','Samsung A54','Today, 7:45 AM','Active'],
+      ['Paolo Mendoza','EMP-1003','Academics','Redmi Note 12','Yesterday, 5:30 PM','Active'],
+      ['Angela Cruz','EMP-1004','Academics','iPhone 13','Oct 28, 7:58 AM','Active'],
+      ['John Dela Cruz','EMP-1005','Information Technology','Pixel 8','Today, 8:10 AM','Active'],
+      ['Mark Villanueva','EMP-1006','Information Technology','Oppo A78','Oct 27, 9:12 AM','Locked'],
+      ['Ana Reyes','EMP-1007','Registrar','Vivo Y27','Oct 29, 8:05 AM','Active'],
+      ['Daniel Garcia','EMP-1008','Registrar','—','Never','Not activated'],
+      ['Liza Ramos','EMP-1009','Finance','iPhone 14','Today, 7:59 AM','Active'],
+      ['Rhea Navarro','EMP-1010','Library','Samsung A15','Oct 26, 1:20 PM','Active'],
+      ['Jose Aquino','EMP-1011','Guidance','—','Never','Not activated'],
+      ['Ramon Torres','EMP-1012','Maintenance','Realme C55','Oct 20, 6:44 AM','Locked'],
+    ].map((r, i) => ({
+      name: r[0], empId: r[1], department: r[2], device: r[3], lastLogin: r[4], status: r[5],
+      mobile: r[5] !== 'Not activated', bg: this_pal(i)[0], text: this_pal(i)[1],
+    })),
+    get departments() { return [...new Set(this.users.map(u => u.department))].sort(); },
+    get filtered() {
+      const q = this.search.toLowerCase();
+      return this.users.filter(u =>
+        (!this.dept || u.department === this.dept) &&
+        (!this.status || u.status === this.status) &&
+        (!q || [u.name, u.empId].some(v => v.toLowerCase().includes(q))));
+    },
+    get summary() {
+      const n = s => this.users.filter(u => u.status === s).length;
+      return [
+        { label: 'Total Accounts',  value: this.users.length,    bg: 'bg-brand-50',   color: 'text-brand-600',   icon: ICONS.users },
+        { label: 'Active',          value: n('Active'),          bg: 'bg-emerald-50', color: 'text-emerald-600', icon: ICONS.check },
+        { label: 'Not activated',   value: n('Not activated'),   bg: 'bg-amber-50',   color: 'text-amber-500',   icon: ICONS.clock },
+        { label: 'Locked',          value: n('Locked'),          bg: 'bg-red-50',     color: 'text-red-500',     icon: ICONS.x },
+      ];
+    },
+    initials(name) { return name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join(''); },
+    statusStyle(st) {
+      return ({
+        'Active':        { badge: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
+        'Not activated': { badge: 'bg-amber-50 text-amber-700',     dot: 'bg-amber-500' },
+        'Locked':        { badge: 'bg-red-50 text-red-700',         dot: 'bg-red-500' },
+      })[st] || { badge: 'bg-gray-100 text-gray-600', dot: 'bg-gray-400' };
+    },
+    copy(text) {
+      if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+      this.showToast(text + ' copied.', 'info', 'Username copied');
+    },
+    resetPassword(u) {
+      this.showToast('A temporary password was sent to ' + u.name + '. They must change it on next login.', 'success', 'Password reset');
+    },
+    toggleLock(u) {
+      u.status = u.status === 'Locked' ? 'Active' : 'Locked';
+      this.showToast(u.name + (u.status === 'Locked' ? ' is now locked out of the mobile app.' : ' can sign in again.'), u.status === 'Locked' ? 'warning' : 'success', u.status === 'Locked' ? 'Account locked' : 'Account unlocked');
+    },
+    toggleMobile(u) {
+      u.mobile = !u.mobile;
+      this.showToast('Mobile access ' + (u.mobile ? 'enabled' : 'disabled') + ' for ' + u.name + '.', 'info', 'Access updated');
+    },
+  };
+}
+</script>
+</body>
+</html>
