@@ -32,16 +32,16 @@
      style="display:none"></div>
 
 <!-- ════ TOAST ════ -->
-<div id="toast" role="status" aria-live="polite" aria-atomic="true" :class="{ show: toast.show }" :data-type="toast.type">
+<div id="toast" role="status" aria-live="polite" aria-atomic="true" :class="{ show: toast.show }" :data-type="toast.type" :style="'--toast-duration:' + toast.duration + 'ms'">
   <div class="toast-icon" :class="toastStyle.bg" aria-hidden="true">
-    <svg class="w-5 h-5" :class="toastStyle.color" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" :d="toastStyle.icon"/></svg>
+    <svg class="w-5 h-5" :class="toastStyle.color" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x-html="toastStyle.icon"></svg>
   </div>
   <div class="min-w-0 flex-1">
     <p class="toast-title" x-text="toast.title"></p>
     <p class="toast-msg" x-text="toast.msg"></p>
   </div>
   <button type="button" class="toast-close" @click="hideToast()" aria-label="Dismiss notification">
-    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
   </button>
 </div>
 
@@ -69,9 +69,7 @@
       <button type="button" @click="closeModal()"
               class="p-2 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
               aria-label="Close dialog">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
       </button>
     </div>
 
@@ -188,9 +186,7 @@
                  @drop.prevent="dragging = false; handleFile($event.dataTransfer.files[0])">
             <div x-show="!imagePreview">
               <div class="w-12 h-12 rounded-2xl bg-brand-100 flex items-center justify-center mx-auto mb-3">
-                <svg class="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                </svg>
+                <svg class="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
               </div>
               <p class="text-sm font-medium text-gray-700">Drop an image here or <span class="text-brand-600">browse</span></p>
               <p class="text-xs text-gray-400 mt-1">PNG, JPG, WEBP — max 5 MB</p>
@@ -275,9 +271,7 @@
                 <a :href="item.href" class="nav-link flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
                    :class="'rounded-md'"
                    :aria-current="item.active ? 'page' : null" :title="item.name">
-                  <svg class="w-5 h-5 flex-shrink-0" :class="item.active ? 'text-brand-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon"/>
-                  </svg>
+                  <svg class="w-5 h-5 flex-shrink-0" :class="item.active ? 'text-brand-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" x-html="item.icon"></svg>
                   <span class="nav-label" x-text="item.name"></span>
                 </a>
               </li>
@@ -297,7 +291,7 @@
         </div>
         <button class="user-info ms-auto p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                 aria-label="Sign out" onclick="location.href='login.html'">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg>
         </button>
       </div>
     </div>
@@ -319,9 +313,9 @@
                 @click="sidebarCollapsed = !sidebarCollapsed"
                 :aria-expanded="(!sidebarCollapsed).toString()" aria-controls="sidebar"
                 :aria-label="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2"/>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v18"/>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="18" height="18" x="3" y="3" rx="2" />
+            <path d="M9 3v18" />
           </svg>
         </button>
 
@@ -331,9 +325,7 @@
                 @click="mobileOpen ? closeMobileSidebar() : openMobileSidebar()"
                 :aria-expanded="mobileOpen.toString()" aria-controls="sidebar"
                 :aria-label="mobileOpen ? 'Close navigation menu' : 'Open navigation menu'">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16" /><path d="M4 12h16" /><path d="M4 19h16" /></svg>
         </button>
 
         <!-- Breadcrumb -->
@@ -351,7 +343,7 @@
                     class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
                     :aria-label="'Notifications' + (unreadCount ? ' (' + unreadCount + ' unread)' : '')"
                     aria-haspopup="true" :aria-expanded="notifOpen.toString()" aria-controls="notif-panel">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /></svg>
               <span class="absolute -top-0.5 -end-0.5 min-w-[17px] h-[17px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none flex items-center justify-center ring-2 ring-white" aria-hidden="true" x-show="unreadCount > 0" x-text="unreadCount"></span>
             </button>
 
@@ -370,7 +362,7 @@
                   <li>
                     <button @click="markRead(n)" class="w-full flex items-start gap-3 px-4 py-3 text-start hover:bg-gray-50/60 transition-colors" :class="{ 'bg-brand-50/40': !n.read }">
                       <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" :class="n.iconBg" aria-hidden="true">
-                        <svg class="w-4 h-4" :class="n.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="n.icon"/></svg>
+                        <svg class="w-4 h-4" :class="n.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x-html="n.icon"></svg>
                       </div>
                       <div class="min-w-0 flex-1">
                         <p class="text-sm font-medium text-gray-800 truncate" x-text="n.title"></p>
@@ -398,7 +390,7 @@
             </div>
             <div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ring-2 ring-white shadow-sm" role="img" aria-label="Juan Dela Cruz">JD</div>
             <button type="button" class="hidden sm:inline-flex p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Sign out" onclick="location.href='login.html'" title="Sign out">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg>
             </button>
           </div>
         </div>
@@ -435,7 +427,7 @@
             <div class="flex items-start justify-between">
               <p class="text-xs font-semibold text-gray-500" x-text="s.label"></p>
               <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="s.iconBg" aria-hidden="true">
-                <svg class="w-5 h-5" :class="s.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="s.icon"/></svg>
+                <svg class="w-5 h-5" :class="s.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x-html="s.icon"></svg>
               </div>
             </div>
             <p class="display-num font-bold text-gray-900 mt-3" x-text="s.value"></p>
@@ -508,7 +500,7 @@
             <template x-for="a in activity" :key="a.title">
               <li class="flex items-center gap-3 py-3">
                 <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" :class="[a.bg, a.color]" aria-hidden="true">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="a.icon"/></svg>
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x-html="a.icon"></svg>
                 </div>
                 <div class="min-w-0 flex-1">
                   <p class="text-sm font-semibold text-gray-900 truncate" x-text="a.title"></p>
@@ -627,10 +619,10 @@ function dashboard() {
 
     /* ── dashboard data ── */
     stats: [
-      { label: 'Total Employees',      value: '12',       sub: '<strong class="text-brand-600">10</strong> currently active',  iconBg: 'bg-brand-50',   iconColor: 'text-brand-600',   icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
-      { label: 'Present Today',        value: '9',        sub: '<strong class="text-emerald-600">90%</strong> of active employees', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
-      { label: 'Pending Leaves',       value: '3',        sub: 'Requires your attention',                                      iconBg: 'bg-amber-50',   iconColor: 'text-amber-500',   icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-      { label: 'Monthly Basic Payroll', value: '₱302,000', sub: 'Illustrative gross base amount',                              iconBg: 'bg-sky-50',     iconColor: 'text-sky-600',     icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+      { label: 'Total Employees',      value: '12',       sub: '<strong class="text-brand-600">10</strong> currently active',  iconBg: 'bg-brand-50',   iconColor: 'text-brand-600',   icon: ICONS.users },
+      { label: 'Present Today',        value: '9',        sub: '<strong class="text-emerald-600">90%</strong> of active employees', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', icon: ICONS.clock },
+      { label: 'Pending Leaves',       value: '3',        sub: 'Requires your attention',                                      iconBg: 'bg-amber-50',   iconColor: 'text-amber-500',   icon: ICONS.cal },
+      { label: 'Monthly Basic Payroll', value: '₱302,000', sub: 'Illustrative gross base amount',                              iconBg: 'bg-sky-50',     iconColor: 'text-sky-600',     icon: ICONS.card },
     ],
     attendance: [
       { day: 'Sat', pct: 91 }, { day: 'Sun', pct: 86 }, { day: 'Mon', pct: 93 }, { day: 'Tue', pct: 89 },
@@ -650,9 +642,9 @@ function dashboard() {
       { name: 'Ana Reyes',     initials: 'AR', dept: 'Administrative', type: 'Personal Leave', date: 'Oct 28, 2026', bg: 'bg-violet-100', text: 'text-violet-600', pillBg: 'bg-brand-50', pillText: 'text-brand-600' },
     ],
     activity: [
-      { title: 'New employee added',   sub: 'Juan Dela Cruz was added to the HR system.',            time: '2 minutes ago',  bg: 'bg-brand-50',   color: 'text-brand-600',   icon: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z' },
-      { title: 'Leave request submitted', sub: 'Maria Santos submitted a vacation leave request.',   time: '35 minutes ago', bg: 'bg-emerald-50', color: 'text-emerald-600', icon: 'M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z' },
-      { title: 'Payroll data updated', sub: 'Monthly payroll records have been updated.',            time: '2 hours ago',    bg: 'bg-violet-50',  color: 'text-violet-600',  icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+      { title: 'New employee added',   sub: 'Juan Dela Cruz was added to the HR system.',            time: '2 minutes ago',  bg: 'bg-brand-50',   color: 'text-brand-600',   icon: ICONS.userAdd },
+      { title: 'Leave request submitted', sub: 'Maria Santos submitted a vacation leave request.',   time: '35 minutes ago', bg: 'bg-emerald-50', color: 'text-emerald-600', icon: ICONS.cal },
+      { title: 'Payroll data updated', sub: 'Monthly payroll records have been updated.',            time: '2 hours ago',    bg: 'bg-violet-50',  color: 'text-violet-600',  icon: ICONS.fileText },
     ],
     events: [
       { month: 'Oct', day: '31', soon: true,  title: 'Payroll Processing',                 sub: 'Monthly payroll computation',  time: '9:00 AM' },

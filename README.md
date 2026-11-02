@@ -23,6 +23,10 @@ Brand colours and the type scale live in `assets/js/tailwind-config.js` (shared 
 
 Poppins. Page title 20–23px, stat numbers 24–30px, card title 15.5px, body/buttons/inputs 13.5px, labels 12.5px, smallest text 11.5px. Buttons and inputs are 40px tall (44px on touch screens for inputs).
 
+## Icons
+
+All icons are [Lucide](https://lucide.dev), inlined as SVG (no icon font or extra script). Static icons live in the HTML; icons chosen at runtime (sidebar nav, toasts, stat cards, notifications) come from the `ICONS` map in `assets/js/main.js` and are rendered with `x-html` inside `<svg viewBox="0 0 24 24">`. To add one, copy its inner markup from lucide.dev into `ICONS`.
+
 ## Toasts
 
 `showToast(message, type, title)` — `type` is `success`, `info`, `warning` or `error`.
