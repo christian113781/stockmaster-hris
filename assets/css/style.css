@@ -20,30 +20,67 @@ button { font-size: .84375rem; }
 .skip-link:focus { inset-block-start: 1rem; }
 :focus-visible { outline: 2px solid #3A8FEF; outline-offset: 2px; border-radius: 4px; }
 
-/* ── sidebar ─────────────────────────────────── */
+/* ── sidebar ───────────────────────────────────
+   Collapse/expand is animated instead of toggling display:none, so labels
+   never pop in at full size while the sidebar is still narrow. On expand the
+   text waits for the width to open, then fades in; on collapse it fades out
+   first. */
 #sidebar {
   width: 16rem;
-  transition: width .25s cubic-bezier(.4,0,.2,1), transform .3s ease;
+  transition: width .28s cubic-bezier(.4,0,.2,1), transform .3s ease;
   overflow: hidden;
 }
-#sidebar.collapsed { width: 4.5rem; }
 
-/* hide text labels when collapsed */
-#sidebar.collapsed .nav-label,
-#sidebar.collapsed .nav-section-label,
-#sidebar.collapsed .logo-text,
-#sidebar.collapsed .user-info { display: none; }
+/* elements that fade + clip away */
+#sidebar .nav-label,
+#sidebar .user-info {
+  white-space: nowrap; overflow: hidden;
+  opacity: 1; max-width: 12rem;
+  transition: max-width .28s cubic-bezier(.4,0,.2,1), opacity .18s ease .12s;
+}
+#sidebar .nav-section-label {
+  white-space: nowrap; overflow: hidden;
+  opacity: 1; max-height: 2rem;
+  transition: opacity .18s ease .12s, max-height .28s cubic-bezier(.4,0,.2,1), margin .28s cubic-bezier(.4,0,.2,1);
+}
+#sidebar .nav-link { transition: padding .28s cubic-bezier(.4,0,.2,1), gap .28s cubic-bezier(.4,0,.2,1), background-color .15s, color .15s, box-shadow .15s, border-radius .28s; }
+#sidebar .user-wrap { transition: padding .28s cubic-bezier(.4,0,.2,1), gap .28s cubic-bezier(.4,0,.2,1); }
 
-/* centre icons when collapsed */
-#sidebar.collapsed .nav-link { justify-content: center; padding-inline: 0; }
-#sidebar.collapsed .nav-link svg { margin: 0; }
-#sidebar.collapsed .logo-wrap { justify-content: center; padding-inline: 0; }
-.logo-mark { display: none; }
-#sidebar.collapsed .logo-full { display: none; }
-#sidebar.collapsed .logo-mark { display: block; }
-#sidebar.collapsed .user-wrap { justify-content: center; padding-inline: 1rem; }
-#sidebar.collapsed .user-wrap .user-avatar { margin: 0; }
-#sidebar.collapsed .nav-section-label { height: 0; margin: 0; overflow: hidden; }
+/* logo: full logo and mark cross-fade (both stay in place, no display swap) */
+#sidebar .logo-wrap { position: relative; min-height: 4.25rem; }
+#sidebar .logo-full {
+  width: 10.5rem; max-width: none; flex: none;       /* fixed size so it clips, never rescales */
+  opacity: 1; transition: opacity .18s ease .12s;
+}
+.logo-mark {
+  position: absolute; inset-inline-start: 1rem; top: 50%; transform: translateY(-50%);
+  opacity: 0; pointer-events: none; transition: opacity .12s ease;
+}
+
+/* collapsed state (desktop only) */
+@media (min-width: 1024px) {
+  #sidebar.collapsed { width: 4.5rem; }
+
+  #sidebar.collapsed .nav-label,
+  #sidebar.collapsed .user-info {
+    opacity: 0; max-width: 0; padding: 0; pointer-events: none;
+    transition: max-width .28s cubic-bezier(.4,0,.2,1), opacity .1s ease;
+  }
+  #sidebar.collapsed .nav-section-label {
+    opacity: 0; max-height: 0; margin-block: 0; pointer-events: none;
+    transition: opacity .1s ease, max-height .28s cubic-bezier(.4,0,.2,1), margin .28s cubic-bezier(.4,0,.2,1);
+  }
+  /* keep the icon centred in the 4.5rem rail */
+  #sidebar.collapsed .nav-link { gap: 0; padding-inline-start: 1.125rem; padding-inline-end: 0; }
+  #sidebar.collapsed .user-wrap { gap: 0; padding-inline-start: .5rem; }
+
+  #sidebar.collapsed .logo-full { opacity: 0; transition: opacity .1s ease; pointer-events: none; }
+  #sidebar.collapsed .logo-mark { opacity: 1; transition: opacity .18s ease .12s; pointer-events: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #sidebar, #sidebar * { transition-duration: .01ms !important; transition-delay: 0s !important; }
+}
 
 .sidebar-scroll { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #A9D2FF transparent; }
 
@@ -69,21 +106,31 @@ button { font-size: .84375rem; }
     z-index: 30; transform: translateX(-100%); width: 16rem !important;
   }
   #sidebar.mobile-open { transform: translateX(0); }
-  #sidebar.collapsed { width: 16rem !important; }
-  #sidebar.collapsed .nav-label,
-  #sidebar.collapsed .logo-text,
-  #sidebar.collapsed .nav-section-label,
-  #sidebar.collapsed .user-info { display: revert; }
-  #sidebar.collapsed .nav-link { justify-content: flex-start; padding-inline: .75rem; }
-  #sidebar.collapsed .logo-wrap { justify-content: flex-start; padding-inline: 1rem; }
-  #sidebar.collapsed .logo-full { display: block; }
-  #sidebar.collapsed .logo-mark { display: none; }
-  #sidebar.collapsed .user-wrap { justify-content: flex-start; padding-inline: 1rem; }
+  .logo-mark { display: none; }
 }
 
-/* ── nav active ──────────────────────────────── */
-.nav-link[aria-current="page"] { background: #D3E8FF; color: #0F5CBA; font-weight: 600; }
-.nav-link[aria-current="page"] svg { color: #1473E6; }
+/* ── nav hover + active ─────────────────────────
+   hover:  soft near-white brand tint, no border
+   active: light brand fill with a solid accent bar on the left edge */
+#sidebar .nav-link:hover {
+  background: #F5F9FF; color: #0F5CBA;
+}
+#sidebar .nav-link:hover svg { color: #1473E6; }
+
+#sidebar .nav-link[aria-current="page"],
+#sidebar .nav-link[aria-current="page"]:hover {
+  background: #E8F3FF; color: #0F5CBA; font-weight: 600;
+  box-shadow: none;
+}
+#sidebar .nav-link[aria-current="page"] svg { color: #1473E6; }
+
+/* active accent bar: a short bar on the card's left edge (open and collapsed) */
+#sidebar .nav-link { position: relative; }
+#sidebar .nav-link[aria-current="page"]::before {
+  content: ""; position: absolute; inset-inline-start: 0; top: 50%; height: 1.625rem; transform: translateY(-50%);
+  width: 4px; border-radius: 0 4px 4px 0; background: #1473E6;
+  pointer-events: none;
+}
 
 /* ── badges ──────────────────────────────────── */
 .badge { display: inline-flex; align-items: center; gap: .3rem;
