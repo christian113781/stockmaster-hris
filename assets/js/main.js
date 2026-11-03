@@ -26,7 +26,7 @@ const ICONS = {
   fileText: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /><path d="M14 2v5a1 1 0 0 0 1 1h5" /><path d="M10 9H8" /><path d="M16 13H8" /><path d="M16 17H8" />',  // file-text
 };
 
-/* ── Sidebar nav (Dashboard, Components, Employees, User Management, Login, Register + 404 exist; other HR pages use '#') ── */
+/* ── Sidebar nav (Dashboard, Components, Employees, User Management, Attendance, Leave, Login, Register + 404 exist; other HR pages use '#') ── */
 function getNavSections(activeHref) {
   const sections = [
     { label: 'Overview', items: [
@@ -38,8 +38,8 @@ function getNavSections(activeHref) {
       { name: 'User Management',  href: 'user.html', icon: ICONS.key },
     ]},
     { label: 'Time Off', items: [
-      { name: 'Attendance',       href: '#', icon: ICONS.clock },
-      { name: 'Leave Management', href: '#', icon: ICONS.cal },
+      { name: 'Attendance',       href: 'attendance.html', icon: ICONS.clock },
+      { name: 'Leave Management', href: 'leave.html', icon: ICONS.cal },
     ]},
     { label: 'Account', items: [
       { name: 'My Profile',       href: '#', icon: ICONS.user },
