@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<<<<<<< HEAD
   <script src="assets/js/theme.js"></script>
+=======
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
   <meta name="theme-color" content="#1473E6">
   <title>TDC HRIS — Attendance</title>
   <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png">
@@ -12,7 +15,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
+<<<<<<< HEAD
   <link rel="stylesheet" href="assets/css/dark.css">
+=======
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
   <!-- Shared dashboard logic (sidebar, toast, notifications, modal plumbing) -->
   <script src="assets/js/main.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -52,22 +58,32 @@
 ════════════════════════════════════════════════ -->
 <div class="flex min-h-[100dvh]">
 
+<<<<<<< HEAD
   <!-- ════════════════════════════════════════════
        SIDEBAR SECTION (shared markup + shared data
        from main.js: navSections, sidebarCollapsed, mobileOpen)
   ════════════════════════════════════════════════ -->
+=======
+  <!-- ════ SIDEBAR ════ -->
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
   <aside id="sidebar"
          aria-label="Primary navigation"
          class="bg-white flex flex-col shadow-card flex-shrink-0 relative z-30"
          :class="{ collapsed: sidebarCollapsed, 'mobile-open': mobileOpen }">
 
+<<<<<<< HEAD
     <!-- Logo -->
+=======
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
     <div class="logo-wrap flex items-center px-4 py-4 border-b border-gray-100 flex-shrink-0">
       <img src="assets/img/tdc-logo-full.png" alt="Tagum Doctors College, Inc." class="logo-full w-full h-auto max-h-11 object-contain object-left">
       <img src="assets/img/tdc-mark.png" alt="Tagum Doctors College" width="40" height="40" class="logo-mark w-10 h-10 object-contain">
     </div>
 
+<<<<<<< HEAD
     <!-- Nav -->
+=======
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
     <nav class="flex-1 sidebar-scroll py-3 px-2" aria-label="Primary">
       <template x-for="section in navSections" :key="section.label">
         <div>
@@ -88,7 +104,10 @@
       </template>
     </nav>
 
+<<<<<<< HEAD
     <!-- User -->
+=======
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
     <div class="border-t border-gray-100 px-3 py-4 flex-shrink-0">
       <div class="user-wrap flex items-center gap-3">
         <div class="user-avatar w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center flex-shrink-0 text-white text-xs font-bold" aria-hidden="true">JD</div>
@@ -107,6 +126,7 @@
   <!-- ══ MAIN ══════════════════════════════════ -->
   <div class="flex-1 flex flex-col min-w-0">
 
+<<<<<<< HEAD
     <!-- ════════════════════════════════════════════
          HEADER SECTION (shared markup + shared data
          from main.js: toast, notifications, signed-in user)
@@ -114,6 +134,11 @@
     <header class="sticky top-0 z-10 bg-white border-b border-gray-100 shadow-sm">
       <div class="flex items-center gap-3 px-4 sm:px-6 py-3.5">
         <!-- Desktop sidebar toggle -->
+=======
+    <!-- ════ HEADER ════ -->
+    <header class="sticky top-0 z-10 bg-white border-b border-gray-100 shadow-sm">
+      <div class="flex items-center gap-3 px-4 sm:px-6 py-3.5">
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
         <button id="collapse-btn"
                 class="hidden lg:flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-brand-600 transition-colors flex-shrink-0"
                 :class="{ 'is-collapsed': sidebarCollapsed }"
@@ -126,7 +151,10 @@
           </svg>
         </button>
 
+<<<<<<< HEAD
         <!-- Mobile menu btn -->
+=======
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
         <button id="menu-btn"
                 class="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
                 @click="mobileOpen ? closeMobileSidebar() : openMobileSidebar()"
@@ -135,7 +163,10 @@
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16" /><path d="M4 12h16" /><path d="M4 19h16" /></svg>
         </button>
 
+<<<<<<< HEAD
         <!-- Breadcrumb -->
+=======
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
         <nav aria-label="Breadcrumb" class="flex-1 min-w-0 text-sm">
           <ol class="flex items-center gap-2">
             <li class="hidden sm:block text-gray-400">Workspace</li>
@@ -146,7 +177,11 @@
 
         <div class="flex items-center gap-2 ms-auto">
           <div class="relative">
+<<<<<<< HEAD
             <button @click="notifOpen = !notifOpen; userOpen = false"
+=======
+            <button @click="notifOpen = !notifOpen"
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
                     class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
                     :aria-label="'Notifications' + (unreadCount ? ' (' + unreadCount + ' unread)' : '')"
                     aria-haspopup="true" :aria-expanded="notifOpen.toString()" aria-controls="notif-panel">
@@ -189,6 +224,7 @@
               </div>
             </div>
           </div>
+<<<<<<< HEAD
           <!-- Signed-in user (dropdown: profile, settings, help, dark mode, sign out) -->
           <div class="relative ms-1 ps-3 sm:ps-4 border-s border-gray-200" @click.outside="userOpen = false" @keydown.escape="userOpen = false">
             <button type="button" @click="userOpen = !userOpen; notifOpen = false"
@@ -242,11 +278,23 @@
                 </button>
               </div>
             </div>
+=======
+          <div class="flex items-center gap-3 ms-1 ps-3 sm:ps-4 border-s border-gray-200">
+            <div class="hidden sm:block text-end leading-tight">
+              <p class="text-sm font-semibold text-gray-900 whitespace-nowrap">Juan Dela Cruz</p>
+              <p class="text-[11.5px] font-medium text-gray-500 whitespace-nowrap">HR Manager</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ring-2 ring-white shadow-sm" role="img" aria-label="Juan Dela Cruz">JD</div>
+            <button type="button" class="hidden sm:inline-flex p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Sign out" onclick="location.href='login.html'" title="Sign out">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg>
+            </button>
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
           </div>
         </div>
       </div>
     </header>
 
+<<<<<<< HEAD
 
     <!-- MAIN -->
     <main id="main" tabindex="-1" class="flex-1 px-4 sm:px-6 py-6 space-y-5 max-w-[1600px] mx-auto w-full">
@@ -301,6 +349,110 @@
             <thead class="bg-brand-50/50">
               <tr class="text-left">
                 <th scope="col" class="px-5 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
+=======
+    <!-- ════ PAGE CONTENT ════ -->
+    <main id="main" tabindex="-1" class="flex-1 px-4 sm:px-6 py-6 space-y-5 max-w-[1600px] mx-auto w-full">
+
+      <!-- Title row -->
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Attendance</h1>
+          <p class="text-sm text-gray-500 mt-1">See who is present, late, absent or on leave each day.</p>
+        </div>
+        <button type="button" @click="exportCsv()" class="flex items-center gap-2 px-3.5 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-lg transition-colors min-h-[40px]">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /></svg>
+          Export CSV
+        </button>
+      </div>
+
+      <!-- Summary -->
+      <div>
+
+
+        <!-- Summary for the selected range: click a card to filter the log -->
+        <section aria-label="Attendance summary" class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+          <template x-for="c in summary" :key="c.label">
+            <button type="button" @click="status = (status === c.label ? '' : c.label)" :aria-pressed="(status === c.label).toString()"
+                    class="text-start bg-white rounded-2xl border shadow-card p-4 flex items-center gap-3 transition-all hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+                    :class="status === c.label ? 'border-brand-400 ring-2 ring-brand-100' : 'border-gray-100'">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" :class="[c.bg, c.color]" aria-hidden="true">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x-html="c.icon"></svg>
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs font-semibold text-gray-500 truncate" x-text="c.label"></p>
+                <p class="text-xl font-bold text-gray-900 leading-tight" x-text="c.value"></p>
+              </div>
+            </button>
+          </template>
+        </section>
+      </div>
+
+      <!-- Attendance log -->
+      <section aria-label="Attendance log" class="bg-white rounded-2xl border border-gray-100 shadow-card overflow-hidden">
+        <div class="p-4 sm:p-5 space-y-4">
+
+          <!-- Title + quick ranges -->
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h2 class="text-base font-semibold text-gray-900">Attendance log</h2>
+              <p class="text-xs text-gray-500 mt-0.5" aria-live="polite" x-text="rangeLabel"></p>
+              <p class="text-xs text-amber-600 mt-0.5" x-show="rangeCapped" style="display:none">Range limited to 62 days. Showing the first 62 days from the start date.</p>
+            </div>
+            <div class="inline-flex flex-wrap gap-1 p-1 rounded-xl bg-gray-100" role="group" aria-label="Quick date ranges">
+              <template x-for="p in presets" :key="p.key">
+                <button type="button" @click="applyPreset(p.key)"
+                        class="px-3 min-h-[32px] rounded-lg text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+                        :class="activePreset === p.key ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                        :aria-pressed="(activePreset === p.key).toString()" x-text="p.label"></button>
+              </template>
+            </div>
+          </div>
+
+          <!-- Search, department and date range on one line -->
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="relative flex-1 min-w-[12rem]">
+              <svg class="w-4 h-4 text-gray-400 absolute start-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+              <label for="att-search" class="sr-only">Search employees</label>
+              <input id="att-search" type="search" x-model.trim="search" placeholder="Search name or ID"
+                     class="w-full min-h-[40px] ps-9 pe-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50/60 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-brand-400 transition-colors">
+            </div>
+            <label for="att-dept" class="sr-only">Filter by department</label>
+            <select id="att-dept" x-model="dept" class="min-h-[40px] px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-400">
+              <option value="">All departments</option>
+              <template x-for="d in departments" :key="d"><option :value="d" x-text="d"></option></template>
+            </select>
+            <div class="flex items-center gap-2" role="group" aria-label="Custom date range">
+              <label for="att-from" class="sr-only">From date</label>
+              <input id="att-from" type="date" x-model="from" :max="to" class="min-h-[40px] px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-400">
+              <span class="text-gray-400 text-sm" aria-hidden="true">–</span>
+              <label for="att-to" class="sr-only">To date</label>
+              <input id="att-to" type="date" x-model="to" :min="from" class="min-h-[40px] px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-400">
+            </div>
+          </div>
+
+          <!-- Status chips -->
+          <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by status">
+            <template x-for="chip in statusChips" :key="chip.label">
+              <button type="button" @click="status = chip.value"
+                      class="inline-flex items-center gap-1.5 px-3 min-h-[32px] rounded-full text-xs font-semibold border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+                      :class="status === chip.value ? 'bg-brand-600 border-brand-600 text-white' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'"
+                      :aria-pressed="(status === chip.value).toString()">
+                <span x-text="chip.label"></span>
+                <span class="px-1.5 rounded-full text-[10.5px]" :class="status === chip.value ? 'bg-white/25' : 'bg-gray-100 text-gray-500'" x-text="chip.count"></span>
+              </button>
+            </template>
+          </div>
+        </div>
+
+        <div class="tbl-wrap" tabindex="0" role="region" aria-label="Attendance log">
+          <table class="w-full text-sm" style="min-inline-size:44rem">
+            <caption class="sr-only">Employee attendance for the selected date</caption>
+            <thead class="bg-brand-50/50 border-y border-gray-100">
+              <tr class="text-left">
+                <th scope="col" class="px-5 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
+                <th scope="col" class="px-3 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider" x-show="isRange">Date</th>
+                <th scope="col" class="px-3 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Department</th>
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
                 <th scope="col" class="px-3 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Time in</th>
                 <th scope="col" class="px-3 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Time out</th>
                 <th scope="col" class="px-3 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Hours</th>
@@ -308,13 +460,18 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
+<<<<<<< HEAD
               <template x-for="r in filtered" :key="r.empId">
+=======
+              <template x-for="r in filtered" :key="r.empId + r.date">
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
                 <tr class="hover:bg-gray-50/60 transition-colors">
                   <td class="px-5 py-3">
                     <div class="flex items-center gap-3">
                       <div class="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" :class="[r.bg, r.text]" aria-hidden="true" x-text="initials(r.name)"></div>
                       <div class="min-w-0">
                         <p class="text-sm font-semibold text-gray-900 whitespace-nowrap" x-text="r.name"></p>
+<<<<<<< HEAD
                         <p class="text-xs text-gray-500 mt-0.5"><span x-text="r.empId"></span> · <span x-text="r.department"></span></p>
                       </div>
                     </div>
@@ -322,15 +479,37 @@
                   <td class="px-3 py-3 text-[13px] text-gray-600 whitespace-nowrap" x-text="t12(r.in)"></td>
                   <td class="px-3 py-3 text-[13px] text-gray-600 whitespace-nowrap" x-text="t12(r.out)"></td>
                   <td class="px-3 py-3 text-[13px] text-gray-600 whitespace-nowrap" x-text="hours(r)"></td>
+=======
+                        <p class="text-xs text-gray-500 mt-0.5" x-text="r.empId + ' · ' + r.jobTitle"></p>
+                        <p class="text-xs text-gray-400 md:hidden" x-text="r.department"></p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-3 py-3 text-[13px] text-gray-600 whitespace-nowrap" x-show="isRange" x-text="shortDate(r.date)"></td>
+                  <td class="px-3 py-3 text-[13px] text-gray-600 whitespace-nowrap hidden md:table-cell" x-text="r.department"></td>
+                  <td class="px-3 py-3 whitespace-nowrap">
+                    <p class="text-[13px] tabular-nums" :class="r.timeIn === '—' ? 'text-gray-300' : 'text-gray-800'" x-text="r.timeIn"></p>
+                    <p class="text-[11.5px] font-medium text-amber-600" x-show="r.lateBy" x-text="r.lateBy + ' late'"></p>
+                  </td>
+                  <td class="px-3 py-3 text-[13px] tabular-nums whitespace-nowrap" :class="r.timeOut === '—' ? 'text-gray-300' : 'text-gray-800'" x-text="r.timeOut"></td>
+                  <td class="px-3 py-3 text-[13px] tabular-nums whitespace-nowrap" :class="r.hours === '—' ? 'text-gray-300' : 'text-gray-800'" x-text="r.hours"></td>
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
                   <td class="px-5 py-3">
                     <span class="badge" :class="statusStyle(r.status).badge"><span class="w-1.5 h-1.5 rounded-full" :class="statusStyle(r.status).dot" aria-hidden="true"></span><span x-text="r.status"></span></span>
                   </td>
                 </tr>
               </template>
               <tr x-show="filtered.length === 0" style="display:none">
+<<<<<<< HEAD
                 <td colspan="5" class="px-5 py-12 text-center">
                   <p class="text-sm font-semibold text-gray-900">No records found</p>
                   <p class="text-xs text-gray-500 mt-1">Try a different search or filter.</p>
+=======
+                <td colspan="7" class="px-5 py-12 text-center">
+                  <p class="text-sm font-semibold text-gray-900">No records found</p>
+                  <p class="text-xs text-gray-500 mt-1">Try a different search, filter or date range.</p>
+                  <button type="button" @click="search = ''; dept = ''; status = ''" class="mt-3 text-xs font-semibold text-brand-600 hover:text-brand-700">Clear filters</button>
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
                 </td>
               </tr>
             </tbody>
@@ -338,7 +517,11 @@
         </div>
 
         <div class="flex flex-wrap items-center justify-between gap-2 px-5 py-3.5 border-t border-gray-100 text-xs text-gray-500">
+<<<<<<< HEAD
           <p>Showing <strong class="text-gray-700" x-text="filtered.length"></strong> of <strong class="text-gray-700" x-text="records.length"></strong> employees</p>
+=======
+          <p>Showing <strong class="text-gray-700" x-text="filtered.length"></strong> of <strong class="text-gray-700" x-text="rows.length"></strong> <span x-text="isRange ? 'records' : 'employees'"></span></p>
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
           <button type="button" x-show="search || dept || status" @click="search = ''; dept = ''; status = ''" class="font-semibold text-brand-600 hover:text-brand-700" style="display:none">Clear filters</button>
         </div>
       </section>
@@ -351,6 +534,7 @@
 </div>
 
 <script>
+<<<<<<< HEAD
 /* Sample data for one day. Statuses match the leave requests on leave-management.html (Nov 4, 2026). */
 const _PAL = [['bg-rose-100','text-rose-600'],['bg-sky-100','text-sky-700'],['bg-violet-100','text-violet-600'],['bg-emerald-100','text-emerald-600'],['bg-amber-100','text-amber-600'],['bg-brand-100','text-brand-700']];
 
@@ -381,10 +565,174 @@ function attendance() {
     },
     get summary() {
       const n = s => this.records.filter(r => r.status === s).length;
+=======
+function attendance() {
+  const TZ = 'Asia/Manila';
+  const SHIFT_START = 8 * 60;      /* 8:00 AM */
+  const GRACE = 0;                 /* minutes of grace before "Late" */
+  const LUNCH = 60;                /* unpaid lunch break, minutes */
+
+  const ymdFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
+  const hmFmt  = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
+  const nowMinutes = () => { const [h, m] = hmFmt.format(new Date()).split(':').map(Number); return h * 60 + m; };
+  const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0); };
+
+  return {
+    ...sharedChrome('attendance.html'),
+
+    today: ymdFmt.format(new Date()),
+    from: ymdFmt.format(new Date()),
+    to: ymdFmt.format(new Date()),
+    nowMin: nowMinutes(),
+    search: '', dept: '', status: '',
+    timer: null,
+
+    init() {
+      this.timer = setInterval(() => { this.nowMin = nowMinutes(); this.today = ymdFmt.format(new Date()); }, 15000);
+    },
+
+    /* ── helpers ── */
+    initials(name) { return name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join(''); },
+    fmtTime(min) {
+      if (min == null) return '—';
+      const h = Math.floor(min / 60), m = min % 60;
+      return ((h % 12) || 12) + ':' + String(m).padStart(2, '0') + ' ' + (h >= 12 ? 'PM' : 'AM');
+    },
+    fmtDur(min) { return min > 0 ? Math.floor(min / 60) + 'h ' + String(min % 60).padStart(2, '0') + 'm' : '—'; },
+    longDateOf(d) { return new Date(d + 'T00:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }); },
+    isWeekend(d) { const w = new Date(d + 'T00:00:00Z').getUTCDay(); return w === 0 || w === 6; },
+    statusStyle(st) {
+      return ({
+        'Present':     { badge: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
+        'Late':        { badge: 'bg-amber-50 text-amber-700',     dot: 'bg-amber-500' },
+        'Absent':      { badge: 'bg-red-50 text-red-700',         dot: 'bg-red-500' },
+        'On Leave':    { badge: 'bg-brand-50 text-brand-700',     dot: 'bg-brand-500' },
+        'Not yet in':  { badge: 'bg-gray-100 text-gray-600',      dot: 'bg-gray-400' },
+        'Scheduled':   { badge: 'bg-gray-100 text-gray-600',      dot: 'bg-gray-400' },
+        'Rest Day':    { badge: 'bg-gray-100 text-gray-600',      dot: 'bg-gray-400' },
+      })[st] || { badge: 'bg-gray-100 text-gray-600', dot: 'bg-gray-400' };
+    },
+
+    /* ── date range ── */
+    addDays(d, n) { const t = new Date(d + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); },
+    shortDate(d) { return new Date(d + 'T00:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric' }); },
+    presets: [
+      { key: 'today',     label: 'Today' },
+      { key: 'yesterday', label: 'Yesterday' },
+      { key: 'last7',     label: 'Last 7 days' },
+      { key: 'week',      label: 'This week' },
+      { key: 'month',     label: 'This month' },
+    ],
+    presetRange(key) {
+      const t = this.today, dow = new Date(t + 'T00:00:00Z').getUTCDay();
+      return ({
+        today:     [t, t],
+        yesterday: [this.addDays(t, -1), this.addDays(t, -1)],
+        last7:     [this.addDays(t, -6), t],
+        week:      [this.addDays(t, -((dow + 6) % 7)), t],      /* Monday to today */
+        month:     [t.slice(0, 8) + '01', t],
+      })[key];
+    },
+    applyPreset(key) { const r = this.presetRange(key); this.from = r[0]; this.to = r[1]; },
+    get activePreset() {
+      const hit = this.presets.find(p => { const r = this.presetRange(p.key); return r[0] === this.from && r[1] === this.to; });
+      return hit ? hit.key : '';
+    },
+    get isRange() { return this.from !== this.to; },
+    get rangeDates() {
+      let f = this.from || this.to, t = this.to || this.from;
+      if (f > t) t = f;
+      const out = [];
+      for (let d = f; d <= t && out.length < 62; d = this.addDays(d, 1)) out.push(d);
+      return out;
+    },
+    get rangeCapped() { return this.from && this.to && this.addDays(this.from, 62) <= this.to; },
+    get rangeLabel() {
+      if (!this.isRange) return this.longDateOf(this.from);
+      const o = { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' };
+      const f = d => new Date(d + 'T00:00:00Z').toLocaleDateString('en-US', o);
+      const days = this.rangeDates;
+      return f(days[0]) + ' – ' + f(days[days.length - 1]) + ' · ' + days.length + ' days';
+    },
+
+    /* ── data ── (demo data; replace with your API) */
+    employees: [
+      { name: 'Juan Dela Cruz',  empId: 'EMP-1001', department: 'Human Resources',        jobTitle: 'HR Manager',          bg: 'bg-brand-100',   text: 'text-brand-700' },
+      { name: 'Maria Santos',    empId: 'EMP-1002', department: 'Academics',              jobTitle: 'Associate Professor', bg: 'bg-rose-100',    text: 'text-rose-600' },
+      { name: 'Paolo Mendoza',   empId: 'EMP-1003', department: 'Academics',              jobTitle: 'Instructor',          bg: 'bg-sky-100',     text: 'text-sky-700' },
+      { name: 'Angela Cruz',     empId: 'EMP-1004', department: 'Academics',              jobTitle: 'Instructor',          bg: 'bg-violet-100',  text: 'text-violet-600', onLeave: true },
+      { name: 'John Dela Cruz',  empId: 'EMP-1005', department: 'Information Technology', jobTitle: 'IT Officer',          bg: 'bg-emerald-100', text: 'text-emerald-600' },
+      { name: 'Mark Villanueva', empId: 'EMP-1006', department: 'Information Technology', jobTitle: 'Systems Support',     bg: 'bg-amber-100',   text: 'text-amber-600' },
+      { name: 'Ana Reyes',       empId: 'EMP-1007', department: 'Registrar',              jobTitle: 'Registrar Clerk',     bg: 'bg-violet-100',  text: 'text-violet-600' },
+      { name: 'Liza Ramos',      empId: 'EMP-1009', department: 'Finance',                jobTitle: 'Accountant',          bg: 'bg-rose-100',    text: 'text-rose-600' },
+      { name: 'Rhea Navarro',    empId: 'EMP-1010', department: 'Library',                jobTitle: 'Librarian',           bg: 'bg-sky-100',     text: 'text-sky-700' },
+      { name: 'Jose Aquino',     empId: 'EMP-1011', department: 'Guidance',               jobTitle: 'Guidance Counselor',  bg: 'bg-emerald-100', text: 'text-emerald-600' },
+      { name: 'Ramon Torres',    empId: 'EMP-1012', department: 'Maintenance',            jobTitle: 'Facilities Staff',    bg: 'bg-amber-100',   text: 'text-amber-600' },
+    ],
+
+    /* Build one day's record for one employee */
+    recordFor(e, d) {
+      const base = { ...e, date: d, timeIn: '—', timeOut: '—', hours: '—', lateBy: '', status: '' };
+      if (this.isWeekend(d))  return { ...base, status: 'Rest Day' };
+      if (d > this.today)     return { ...base, status: 'Scheduled' };
+      const isToday = d === this.today;
+
+      let tin = null, tout = null, status = '';
+      {
+        const h = hash(e.empId + d) % 100;
+        if (e.onLeave && isToday) status = 'On Leave';
+        else if (h >= 92)  status = 'On Leave';
+        else if (h >= 84)  status = 'Absent';
+        else {
+          tin = h < 66 ? 7 * 60 + 35 + (h % 24) : 8 * 60 + 4 + (h % 62);   /* on time ≈ 7:35–7:58, late ≈ 8:04–9:05 */
+          tout = 17 * 60 + (hash(d + e.empId) % 75);                       /* 5:00–6:14 PM */
+        }
+        if (isToday && tin != null) { if (tin > this.nowMin) tin = null; tout = null; }
+      }
+
+      if (tin != null) {
+        const late = tin - SHIFT_START - GRACE;
+        status = late > 0 ? 'Late' : 'Present';
+        base.lateBy = late > 0 ? (late >= 60 ? Math.floor(late / 60) + 'h ' + (late % 60) + 'm' : late + 'm') : '';
+        base.timeIn = this.fmtTime(tin);
+        if (tout != null) { base.timeOut = this.fmtTime(tout); base.hours = this.fmtDur(tout - tin - LUNCH); }
+      } else if (!status) {
+        status = isToday ? (this.nowMin >= 10 * 60 ? 'Absent' : 'Not yet in') : 'Absent';
+      }
+      return { ...base, status };
+    },
+
+    get rows() {
+      const days = this.rangeDates, single = days.length === 1, out = [];
+      /* newest day first; for a multi-day range, weekends and future days are left out */
+      [...days].reverse().forEach(d => {
+        if (!single && (this.isWeekend(d) || d > this.today)) return;
+        this.employees.forEach(e => out.push(this.recordFor(e, d)));
+      });
+      return out;
+    },
+    get departments() { return [...new Set(this.employees.map(e => e.department))].sort(); },
+    get filtered() {
+      const q = this.search.toLowerCase();
+      return this.rows.filter(r =>
+        (!this.dept || r.department === this.dept) &&
+        (!this.status || r.status === this.status) &&
+        (!q || r.name.toLowerCase().includes(q) || r.empId.toLowerCase().includes(q)));
+    },
+    get statusChips() {
+      const r = this.rows, c = s => r.filter(x => x.status === s).length;
+      const all = [{ label: 'All', value: '', count: r.length }];
+      return all.concat(['Present', 'Late', 'Absent', 'On Leave', 'Not yet in', 'Scheduled', 'Rest Day']
+        .filter(s => c(s) > 0 || this.status === s).map(s => ({ label: s, value: s, count: c(s) })));
+    },
+    get summary() {
+      const n = st => this.rows.filter(r => r.status === st).length;
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
       return [
         { label: 'Present',  value: n('Present'),  bg: 'bg-emerald-50', color: 'text-emerald-600', icon: ICONS.check },
         { label: 'Late',     value: n('Late'),     bg: 'bg-amber-50',   color: 'text-amber-500',   icon: ICONS.clock },
         { label: 'Absent',   value: n('Absent'),   bg: 'bg-red-50',     color: 'text-red-500',     icon: ICONS.x },
+<<<<<<< HEAD
         { label: 'On leave', value: n('On Leave'), bg: 'bg-brand-50',   color: 'text-brand-600',   icon: ICONS.cal },
       ];
     },
@@ -407,6 +755,25 @@ function attendance() {
         'Absent':   { badge: 'bg-red-50 text-red-700',         dot: 'bg-red-500' },
         'On Leave': { badge: 'bg-brand-50 text-brand-700',     dot: 'bg-brand-500' },
       })[st] || { badge: 'bg-gray-100 text-gray-600', dot: 'bg-gray-400' };
+=======
+        { label: 'On Leave', value: n('On Leave'), bg: 'bg-brand-50',   color: 'text-brand-600',   icon: ICONS.cal },
+      ];
+    },
+
+    /* ── Export ── */
+    exportCsv() {
+      const q = v => '"' + String(v).replace(/"/g, '""') + '"';
+      const head = ['Date', 'Employee ID', 'Name', 'Department', 'Job Title', 'Time In', 'Time Out', 'Hours', 'Late By', 'Status'];
+      const lines = [head.map(q).join(',')].concat(this.filtered.map(r =>
+        [r.date, r.empId, r.name, r.department, r.jobTitle, r.timeIn, r.timeOut, r.hours, r.lateBy, r.status].map(q).join(',')));
+      const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); const tag = this.isRange ? this.from + '_to_' + this.to : this.from;
+      a.download = 'attendance-' + tag + '.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      this.showToast('attendance-' + tag + '.csv downloaded.', 'success', 'Export ready');
+>>>>>>> a086fcfb9490f89dd4b7b43dc4cb1a55fa7f5da7
     },
   };
 }
