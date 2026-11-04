@@ -4,6 +4,7 @@
 
 /* Lucide icons (https://lucide.dev) — inner SVG markup, rendered with x-html inside <svg viewBox="0 0 24 24"> */
 const ICONS = {
+  chart: '<path d="M3 3v16a2 2 0 0 0 2 2h16" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" />',  // chart-column
   home: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />',  // house
   grid: '<rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" />',  // layout-grid
   users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><path d="M16 3.128a4 4 0 0 1 0 7.744" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><circle cx="9" cy="7" r="4" />',  // users
@@ -32,14 +33,15 @@ function getNavSections(activeHref) {
     { label: 'Overview', items: [
       { name: 'Dashboard',        href: 'index.html',      icon: ICONS.home },
       { name: 'Components',       href: 'components.html', icon: ICONS.grid },
+      { name: 'Chart Overview',   href: 'chart.html', icon: ICONS.chart },
     ]},
     { label: 'People', items: [
       { name: 'Employees',        href: 'employee.html', icon: ICONS.users },
       { name: 'User Management',  href: 'user.html', icon: ICONS.key },
     ]},
     { label: 'Time Off', items: [
-      { name: 'Attendance',       href: '#', icon: ICONS.clock },
-      { name: 'Leave Management', href: '#', icon: ICONS.cal },
+      { name: 'Attendance',       href: 'attendance.html', icon: ICONS.clock },
+      { name: 'Leave Management', href: 'leave-management.html', icon: ICONS.cal },
     ]},
     { label: 'Account', items: [
       { name: 'My Profile',       href: '#', icon: ICONS.user },
@@ -96,6 +98,13 @@ function liveClock() {
 /* ── Everything a page spreads into its Alpine component ── */
 function sharedChrome(activeHref) {
   return {
+    /* THEME — dark-mode switch lives in the avatar dropdown; logic lives in assets/js/theme.js */
+    dark: window.TDCTheme ? window.TDCTheme.isDark() : false,
+    toggleDark() { this.dark = window.TDCTheme.toggle(); },
+
+    /* ACCOUNT DROPDOWN (avatar menu in the header) */
+    userOpen: false,
+
     /* SIDEBAR */
     sidebarCollapsed: false,
     mobileOpen: false,

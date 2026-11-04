@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <script src="assets/js/theme.js"></script>
+  <meta name="theme-color" content="#1473E6">
+  <title>TDC HRIS — Leave Management</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png">
+  <link rel="icon" href="assets/img/favicon.ico" sizes="any">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/dark.css">
+  <!-- Shared dashboard logic (sidebar, toast, notifications, modal plumbing) -->
+  <script src="assets/js/main.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="assets/js/tailwind-config.js"></script>
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="font-poppins text-gray-800 antialiased" x-data="leaves()" x-cloak>
+
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<!-- ════════════════════════════════════════════════
+     MODAL — "Request leave" (page-specific)
+════════════════════════════════════════════════ -->
+<div id="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-desc"
+     :class="{ open: modalOpen }" @keydown.escape="closeModal()"
+     @click="if ($event.target.id === 'modal-backdrop') closeModal()">
+  <div id="modal-dialog" x-ref="dialog" @keydown.tab="trapFocus($event)">
+    <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100 sticky top-0 bg-white z-10 rounded-t-[1.25rem]">
+      <div>
+        <h2 id="modal-title" class="text-lg font-bold text-gray-900">Request Leave</h2>
+        <p id="modal-desc" class="text-xs text-gray-400 mt-0.5">File a leave request for approval</p>
+      </div>
+      <button type="button" @click="closeModal()" class="p-2 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors" aria-label="Close dialog">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <form @submit.prevent="submitForm()" novalidate>
+      <div class="px-6 py-5 space-y-4">
+        <div>
+          <label for="lv-emp" class="block text-xs font-semibold text-gray-600 mb-1.5">Employee <span aria-hidden="true" class="text-red-500">*</span><span class="sr-only">(required)</span></label>
+          <select id="lv-emp" class="field" :class="{ error: errors.employee }" x-model="form.employee" aria-describedby="lv-emp-err">
+            <option value="">Select employee</option>
+            <template x-for="e in employees" :key="e.name"><option :value="e.name" x-text="e.name + ' — ' + e.department"></option></template>
+          </select>
+          <p id="lv-emp-err" class="mt-1 text-xs text-red-500" role="alert" x-show="errors.employee" x-text="errors.employee"></p>
+        </div>
+        <div>
+          <label for="lv-type" class="block text-xs font-semibold text-gray-600 mb-1.5">Leave type <span aria-hidden="true" class="text-red-500">*</span><span class="sr-only">(required)</span></label>
+          <select id="lv-type" class="field" :class="{ error: errors.type }" x-model="form.type" aria-describedby="lv-type-err">
+            <option value="">Select leave type</option>
+            <template x-for="t in types" :key="t"><option x-text="t"></option></template>
+          </select>
+          <p id="lv-type-err" class="mt-1 text-xs text-red-500" role="alert" x-show="errors.type" x-text="errors.type"></p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="lv-from" class="block text-xs font-semibold text-gray-600 mb-1.5">Start date <span aria-hidden="true" class="text-red-500">*</span><span class="sr-only">(required)</span></label>
+            <input id="lv-from" type="date" class="field" :class="{ error: errors.from }" x-model="form.from" aria-describedby="lv-from-err">
+            <p id="lv-from-err" class="mt-1 text-xs text-red-500" role="alert" x-show="errors.from" x-text="errors.from"></p>
+          </div>
+          <div>
+            <label for="lv-to" class="block text-xs font-semibold text-gray-600 mb-1.5">End date <span aria-hidden="true" class="text-red-500">*</span><span class="sr-only">(required)</span></label>
+            <input id="lv-to" type="date" class="field" :class="{ error: errors.to }" x-model="form.to" :min="form.from" aria-describedby="lv-to-err">
+            <p id="lv-to-err" class="mt-1 text-xs text-red-500" role="alert" x-show="errors.to" x-text="errors.to"></p>
+          </div>
+        </div>
+        <div class="bg-brand-50 rounded-xl p-4 flex items-center justify-between" aria-live="polite">
+          <div class="text-sm text-brand-700 font-medium">Working days requested <span class="block text-[11.5px] font-normal text-brand-600/80">Weekends are not counted</span></div>
+          <div class="text-lg font-bold text-brand-600" x-text="formDays ? formDays + (formDays === 1 ? ' day' : ' days') : '—'"></div>
+        </div>
+        <div>
+          <label for="lv-reason" class="block text-xs font-semibold text-gray-600 mb-1.5">Reason <span aria-hidden="true" class="text-red-500">*</span><span class="sr-only">(required)</span></label>
+          <textarea id="lv-reason" rows="3" class="field resize-none" :class="{ error: errors.reason }" x-model.trim="form.reason" placeholder="Short note for the approver…" aria-describedby="lv-reason-err"></textarea>
+          <p id="lv-reason-err" class="mt-1 text-xs text-red-500" role="alert" x-show="errors.reason" x-text="errors.reason"></p>
+        </div>
+      </div>
+      <div class="flex items-center justify-end px-6 py-4 border-t border-gray-100 gap-3 sticky bottom-0 bg-white rounded-b-[1.25rem]">
+        <button type="button" @click="closeModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-100 transition-colors min-h-[40px]">Cancel</button>
+        <button type="submit" class="px-6 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 text-white hover:bg-brand-700 transition-colors shadow-sm min-h-[40px]">Submit Request</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ════ MOBILE OVERLAY ════ -->
+<div id="sidebar-overlay"
+     class="fixed inset-0 bg-gray-900/50 z-20 lg:hidden"
+     aria-hidden="true"
+     x-show="mobileOpen"
+     x-transition.opacity
+     @click="closeMobileSidebar()"
+     style="display:none"></div>
+
+<!-- ════ TOAST ════ -->
+<div id="toast" role="status" aria-live="polite" aria-atomic="true" :class="{ show: toast.show }" :data-type="toast.type" :style="'--toast-duration:' + toast.duration + 'ms'">
+  <div class="toast-icon" :class="toastStyle.bg" aria-hidden="true">
+    <svg class="w-5 h-5" :class="toastStyle.color" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x-html="toastStyle.icon"></svg>
+  </div>
+  <div class="min-w-0 flex-1">
+    <p class="toast-title" x-text="toast.title"></p>
+    <p class="toast-msg" x-text="toast.msg"></p>
+  </div>
+  <button type="button" class="toast-close" @click="hideToast()" aria-label="Dismiss notification">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+  </button>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     LAYOUT SHELL
+════════════════════════════════════════════════ -->
+<div class="flex min-h-[100dvh]">
+
+  <!-- ════════════════════════════════════════════
+       SIDEBAR SECTION (shared markup + shared data
+       from main.js: navSections, sidebarCollapsed, mobileOpen)
+  ════════════════════════════════════════════════ -->
+  <aside id="sidebar"
+         aria-label="Primary navigation"
+         class="bg-white flex flex-col shadow-card flex-shrink-0 relative z-30"
+         :class="{ collapsed: sidebarCollapsed, 'mobile-open': mobileOpen }">
+
+    <!-- Logo -->
+    <div class="logo-wrap flex items-center px-4 py-4 border-b border-gray-100 flex-shrink-0">
+      <img src="assets/img/tdc-logo-full.png" alt="Tagum Doctors College, Inc." class="logo-full w-full h-auto max-h-11 object-contain object-left">
+      <img src="assets/img/tdc-mark.png" alt="Tagum Doctors College" width="40" height="40" class="logo-mark w-10 h-10 object-contain">
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 sidebar-scroll py-3 px-2" aria-label="Primary">
+      <template x-for="section in navSections" :key="section.label">
+        <div>
+          <p class="nav-section-label px-3 mb-2 mt-4 first:mt-0 text-[11.5px] font-semibold text-gray-400 uppercase tracking-wider" x-text="section.label"></p>
+          <ul class="space-y-0.5" role="list">
+            <template x-for="item in section.items" :key="item.name">
+              <li>
+                <a :href="item.href" class="nav-link flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+                   :class="'rounded-md'"
+                   :aria-current="item.active ? 'page' : null" :title="item.name">
+                  <svg class="w-5 h-5 flex-shrink-0" :class="item.active ? 'text-brand-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" x-html="item.icon"></svg>
+                  <span class="nav-label" x-text="item.name"></span>
+                </a>
+              </li>
+            </template>
+          </ul>
+        </div>
+      </template>
+    </nav>
+
+    <!-- User -->
+    <div class="border-t border-gray-100 px-3 py-4 flex-shrink-0">
+      <div class="user-wrap flex items-center gap-3">
+        <div class="user-avatar w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center flex-shrink-0 text-white text-xs font-bold" aria-hidden="true">JD</div>
+        <div class="user-info min-w-0">
+          <p class="text-sm font-semibold text-gray-800 truncate">Juan Dela Cruz</p>
+          <p class="text-xs text-gray-500 truncate">HR Manager</p>
+        </div>
+        <button class="user-info ms-auto p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                aria-label="Sign out" onclick="location.href='login.html'">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══════════════════════════════════ -->
+  <div class="flex-1 flex flex-col min-w-0">
+
+    <!-- ════════════════════════════════════════════
+         HEADER SECTION (shared markup + shared data
+         from main.js: toast, notifications, signed-in user)
+    ════════════════════════════════════════════════ -->
+    <header class="sticky top-0 z-10 bg-white border-b border-gray-100 shadow-sm">
+      <div class="flex items-center gap-3 px-4 sm:px-6 py-3.5">
+        <!-- Desktop sidebar toggle -->
+        <button id="collapse-btn"
+                class="hidden lg:flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-brand-600 transition-colors flex-shrink-0"
+                :class="{ 'is-collapsed': sidebarCollapsed }"
+                @click="sidebarCollapsed = !sidebarCollapsed"
+                :aria-expanded="(!sidebarCollapsed).toString()" aria-controls="sidebar"
+                :aria-label="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="18" height="18" x="3" y="3" rx="2" />
+            <path d="M9 3v18" />
+          </svg>
+        </button>
+
+        <!-- Mobile menu btn -->
+        <button id="menu-btn"
+                class="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+                @click="mobileOpen ? closeMobileSidebar() : openMobileSidebar()"
+                :aria-expanded="mobileOpen.toString()" aria-controls="sidebar"
+                :aria-label="mobileOpen ? 'Close navigation menu' : 'Open navigation menu'">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16" /><path d="M4 12h16" /><path d="M4 19h16" /></svg>
+        </button>
+
+        <!-- Breadcrumb -->
+        <nav aria-label="Breadcrumb" class="flex-1 min-w-0 text-sm">
+          <ol class="flex items-center gap-2">
+            <li class="hidden sm:block text-gray-400">Workspace</li>
+            <li class="hidden sm:block text-gray-300" aria-hidden="true">/</li>
+            <li class="font-semibold text-gray-900 truncate" aria-current="page">Leave Management</li>
+          </ol>
+        </nav>
+
+        <div class="flex items-center gap-2 ms-auto">
+          <div class="relative">
+            <button @click="notifOpen = !notifOpen; userOpen = false"
+                    class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+                    :aria-label="'Notifications' + (unreadCount ? ' (' + unreadCount + ' unread)' : '')"
+                    aria-haspopup="true" :aria-expanded="notifOpen.toString()" aria-controls="notif-panel">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /></svg>
+              <span class="absolute -top-0.5 -end-0.5 min-w-[17px] h-[17px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none flex items-center justify-center ring-2 ring-white" aria-hidden="true" x-show="unreadCount > 0" x-text="unreadCount"></span>
+            </button>
+
+            <div id="notif-panel" role="menu" aria-label="Notifications"
+                 x-show="notifOpen" x-transition
+                 @click.outside="notifOpen = false" @keydown.escape="notifOpen = false"
+                 class="fixed inset-x-3 top-[4.25rem] sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-2 sm:w-96 bg-white rounded-2xl shadow-card border border-gray-100 z-40 overflow-hidden"
+                 style="display:none">
+              <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <h2 class="text-sm font-bold text-gray-900">Notifications</h2>
+                <button @click="markAllRead()" x-show="unreadCount > 0"
+                        class="text-xs font-semibold text-brand-600 hover:text-brand-700">Mark all as read</button>
+              </div>
+              <ul class="max-h-80 overflow-y-auto divide-y divide-gray-50" role="list">
+                <template x-for="n in notifications" :key="n.id">
+                  <li>
+                    <button @click="markRead(n)" class="w-full flex items-start gap-3 px-4 py-3 text-start hover:bg-gray-50/60 transition-colors" :class="{ 'bg-brand-50/40': !n.read }">
+                      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" :class="n.iconBg" aria-hidden="true">
+                        <svg class="w-4 h-4" :class="n.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x-html="n.icon"></svg>
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium text-gray-800 truncate" x-text="n.title"></p>
+                        <p class="text-xs text-gray-500 mt-0.5" x-text="n.message"></p>
+                        <p class="text-xs text-gray-500 mt-1" x-text="n.time"></p>
+                      </div>
+                      <span class="w-2 h-2 rounded-full bg-brand-500 flex-shrink-0 mt-1.5" aria-hidden="true" x-show="!n.read"></span>
+                    </button>
+                  </li>
+                </template>
+                <li x-show="notifications.length === 0">
+                  <p class="px-4 py-8 text-center text-sm text-gray-400">You're all caught up.</p>
+                </li>
+              </ul>
+              <div class="px-4 py-3 border-t border-gray-100 text-center">
+                <a href="#" class="text-xs font-semibold text-brand-600 hover:text-brand-700">View all notifications</a>
+              </div>
+            </div>
+          </div>
+          <!-- Signed-in user (dropdown: profile, settings, help, dark mode, sign out) -->
+          <div class="relative ms-1 ps-3 sm:ps-4 border-s border-gray-200" @click.outside="userOpen = false" @keydown.escape="userOpen = false">
+            <button type="button" @click="userOpen = !userOpen; notifOpen = false"
+                    class="flex items-center gap-2.5 rounded-full ps-1 pe-2 py-1 sm:ps-3 hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+                    aria-haspopup="menu" :aria-expanded="userOpen.toString()" aria-controls="user-menu" aria-label="Account menu for Juan Dela Cruz">
+              <span class="hidden sm:block text-end leading-tight">
+                <span class="block text-sm font-semibold text-gray-900 whitespace-nowrap">Juan Dela Cruz</span>
+                <span class="block text-[11.5px] font-medium text-gray-500 whitespace-nowrap">HR Manager</span>
+              </span>
+              <span class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ring-2 ring-white shadow-sm" aria-hidden="true">JD</span>
+              <svg class="w-4 h-4 text-gray-400 transition-transform" :class="{ 'rotate-180': userOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+
+            <div id="user-menu" role="menu" aria-label="Account"
+                 x-show="userOpen" x-transition style="display:none"
+                 class="absolute end-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-card border border-gray-100 z-40 overflow-hidden">
+              <div class="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100">
+                <span class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0" aria-hidden="true">JD</span>
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-gray-900 truncate">Juan Dela Cruz</p>
+                  <p class="text-xs text-gray-500 truncate">juan.delacruz@stockmaster.com</p>
+                </div>
+              </div>
+              <div class="p-1.5">
+                <a href="#" role="menuitem" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                  My Profile
+                </a>
+                <a href="#" role="menuitem" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
+                  Account Settings
+                </a>
+                <a href="#" role="menuitem" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg>
+                  Help &amp; Support
+                </a>
+                <!-- Dark mode switch (stays open so the change is visible) -->
+                <button type="button" role="menuitemcheckbox" :aria-checked="dark.toString()" @click="toggleDark()"
+                        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors text-start">
+                  <svg x-show="!dark" class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></svg>
+                  <svg x-show="dark" x-cloak class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>
+                  <span class="flex-1">Dark mode</span>
+                  <span class="menu-switch" :class="{ 'is-on': dark }" aria-hidden="true"></span>
+                </button>
+              </div>
+              <div class="p-1.5 border-t border-gray-100">
+                <button type="button" role="menuitem" onclick="location.href='login.html'"
+                        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors text-start">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg>
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+
+    <!-- MAIN -->
+    <main id="main" tabindex="-1" class="flex-1 px-4 sm:px-6 py-6 space-y-5 max-w-[1600px] mx-auto w-full">
+
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Leave Management</h1>
+          <p class="text-sm text-gray-500 mt-1">Review, approve and file employee leave requests.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <button type="button" @click="showToast('Leave requests exported as CSV.', 'success', 'Export ready')" class="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-xl transition-colors min-h-[40px]">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /></svg>
+            Export
+          </button>
+          <button type="button" @click="openModal()" class="flex items-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm min-h-[40px]">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+            Request Leave
+          </button>
+        </div>
+      </div>
+
+      <section aria-label="Leave summary" class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        <template x-for="c in summary" :key="c.label">
+          <article class="bg-white rounded-2xl border border-gray-100 shadow-card p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" :class="[c.bg, c.color]" aria-hidden="true">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x-html="c.icon"></svg>
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs font-semibold text-gray-500 leading-snug" x-text="c.label"></p>
+              <p class="text-xl font-bold text-gray-900 leading-tight" x-text="c.value"></p>
+            </div>
+          </article>
+        </template>
+      </section>
+
+      <section aria-label="Leave requests" class="bg-white rounded-2xl border border-gray-100 shadow-card overflow-hidden">
+        <div class="flex flex-wrap items-center gap-2 p-5 pb-4">
+          <div class="relative w-full sm:flex-1 sm:min-w-[12rem] lg:max-w-md">
+            <svg class="w-4 h-4 text-gray-400 absolute start-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></svg>
+            <label for="lv-search" class="sr-only">Search leave requests</label>
+            <input id="lv-search" type="search" x-model.trim="search" placeholder="Search employee or department" class="field ps-9">
+          </div>
+          <label for="lv-filter-type" class="sr-only">Filter by leave type</label>
+          <select id="lv-filter-type" x-model="type" class="field w-full sm:w-auto">
+            <option value="">All leave types</option>
+            <template x-for="t in types" :key="t"><option x-text="t"></option></template>
+          </select>
+          <label for="lv-filter-status" class="sr-only">Filter by status</label>
+          <select id="lv-filter-status" x-model="status" class="field w-full sm:w-auto">
+            <option value="">All statuses</option>
+            <option>Pending</option><option>Approved</option><option>Rejected</option>
+          </select>
+        </div>
+
+        <div class="tbl-wrap" tabindex="0" role="region" aria-label="Leave requests">
+          <table class="w-full text-sm" style="min-inline-size:56rem">
+            <caption class="sr-only">Employee leave requests</caption>
+            <thead class="bg-brand-50/50">
+              <tr class="text-left">
+                <th scope="col" class="px-5 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
+                <th scope="col" class="px-3 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Leave type</th>
+                <th scope="col" class="px-3 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Dates</th>
+                <th scope="col" class="px-3 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Days</th>
+                <th scope="col" class="px-3 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Reason</th>
+                <th scope="col" class="px-3 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                <th scope="col" class="px-5 py-3 text-[11.5px] font-semibold text-gray-500 uppercase tracking-wider text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <template x-for="r in filtered" :key="r.id">
+                <tr class="hover:bg-gray-50/60 transition-colors">
+                  <td class="px-5 py-3">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" :class="[r.bg, r.text]" aria-hidden="true" x-text="initials(r.name)"></div>
+                      <div class="min-w-0">
+                        <p class="text-sm font-semibold text-gray-900 whitespace-nowrap" x-text="r.name"></p>
+                        <p class="text-xs text-gray-500 mt-0.5" x-text="r.department"></p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-3 py-3 text-[13px] text-gray-600 whitespace-nowrap" x-text="r.type"></td>
+                  <td class="px-3 py-3 text-[13px] text-gray-600 whitespace-nowrap" x-text="range(r)"></td>
+                  <td class="px-3 py-3 text-[13px] text-gray-600 whitespace-nowrap" x-text="days(r.from, r.to)"></td>
+                  <td class="px-3 py-3 text-[13px] text-gray-600 max-w-[16rem] truncate" :title="r.reason" x-text="r.reason"></td>
+                  <td class="px-3 py-3">
+                    <span class="badge" :class="statusStyle(r.status).badge"><span class="w-1.5 h-1.5 rounded-full" :class="statusStyle(r.status).dot" aria-hidden="true"></span><span x-text="r.status"></span></span>
+                  </td>
+                  <td class="px-5 py-3">
+                    <div class="flex items-center justify-end gap-1">
+                      <template x-if="r.status === 'Pending'">
+                        <div class="flex items-center gap-1">
+                          <button type="button" @click="approve(r)" class="w-9 h-9 rounded-lg flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 text-emerald-600 hover:bg-emerald-50" :aria-label="'Approve leave for ' + r.name" title="Approve">
+                            <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" x-html="ICONS.check"></svg>
+                          </button>
+                          <button type="button" @click="reject(r)" class="w-9 h-9 rounded-lg flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 text-red-500 hover:bg-red-50" :aria-label="'Reject leave for ' + r.name" title="Reject">
+                            <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" x-html="ICONS.x"></svg>
+                          </button>
+                        </div>
+                      </template>
+                      <span x-show="r.status !== 'Pending'" class="text-xs text-gray-400 pe-2">Reviewed</span>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+              <tr x-show="filtered.length === 0" style="display:none">
+                <td colspan="7" class="px-5 py-12 text-center">
+                  <p class="text-sm font-semibold text-gray-900">No leave requests found</p>
+                  <p class="text-xs text-gray-500 mt-1">Try a different search or filter.</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 px-5 py-3.5 border-t border-gray-100 text-xs text-gray-500">
+          <p>Showing <strong class="text-gray-700" x-text="filtered.length"></strong> of <strong class="text-gray-700" x-text="requests.length"></strong> requests</p>
+          <button type="button" x-show="search || type || status" @click="search = ''; type = ''; status = ''" class="font-semibold text-brand-600 hover:text-brand-700" style="display:none">Clear filters</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="border-t border-gray-100 px-6 py-4 text-center text-xs text-gray-400">
+      Tagum Doctors College, Inc. &copy; 2026
+    </footer>
+  </div>
+</div>
+
+<script>
+/* Sample data. TODAY is fixed so the demo numbers stay stable; in production use the server date. */
+const TODAY = '2026-11-04';
+const _PAL = [['bg-rose-100','text-rose-600'],['bg-sky-100','text-sky-700'],['bg-violet-100','text-violet-600'],['bg-emerald-100','text-emerald-600'],['bg-amber-100','text-amber-600'],['bg-brand-100','text-brand-700']];
+const _d = s => new Date(s + 'T00:00:00');
+
+function leaves() {
+  return {
+    ...sharedChrome('leave-management.html'),
+    modalOpen: false, search: '', type: '', status: '',
+    types: ['Vacation', 'Sick', 'Emergency', 'Parental', 'Unpaid'],
+    employees: [
+      ['Juan Dela Cruz', 'Human Resources'], ['Maria Santos', 'Academics'], ['Paolo Reyes', 'Academics'],
+      ['Angela Cruz', 'Academics'], ['John Dela Cruz', 'Information Technology'], ['Mark Villanueva', 'Information Technology'],
+      ['Ana Reyes', 'Registrar'], ['Liza Ramos', 'Finance'], ['Rhea Navarro', 'Library'], ['Jose Aquino', 'Guidance'],
+    ].map((e, i) => ({ name: e[0], department: e[1], bg: _PAL[i % 6][0], text: _PAL[i % 6][1] })),
+    requests: [],
+    form: { employee: '', type: '', from: '', to: '', reason: '' },
+    errors: {},
+    init() {
+      this.requests = [
+        ['Paolo Reyes',    'Sick',      '2026-11-03', '2026-11-04', 'Flu, doctor’s note attached.',        'Pending'],
+        ['Maria Santos',   'Vacation',  '2026-11-16', '2026-11-20', 'Family trip to Davao.',               'Pending'],
+        ['Liza Ramos',     'Emergency', '2026-11-05', '2026-11-05', 'Family emergency.',                   'Pending'],
+        ['Angela Cruz',    'Vacation',  '2026-11-02', '2026-11-06', 'Annual rest week.',                   'Approved'],
+        ['John Dela Cruz', 'Sick',      '2026-11-04', '2026-11-04', 'Medical check-up.',                   'Approved'],
+        ['Ana Reyes',      'Parental',  '2026-11-09', '2026-11-27', 'Maternity leave.',                    'Approved'],
+        ['Rhea Navarro',   'Unpaid',    '2026-10-26', '2026-10-30', 'Personal matters out of town.',       'Rejected'],
+        ['Mark Villanueva','Vacation',  '2026-12-21', '2026-12-29', 'Holiday break.',                      'Pending'],
+        ['Jose Aquino',    'Sick',      '2026-10-20', '2026-10-21', 'Dental procedure.',                   'Approved'],
+        ['Juan Dela Cruz', 'Emergency', '2026-10-14', '2026-10-14', 'Typhoon damage at home.',             'Approved'],
+      ].map((r, i) => {
+        const e = this.employees.find(x => x.name === r[0]);
+        return { id: i + 1, name: r[0], department: e.department, type: r[1], from: r[2], to: r[3], reason: r[4], status: r[5], bg: e.bg, text: e.text };
+      });
+    },
+    get filtered() {
+      const q = this.search.toLowerCase();
+      return this.requests.filter(r =>
+        (!this.type || r.type === this.type) &&
+        (!this.status || r.status === this.status) &&
+        (!q || [r.name, r.department].some(v => v.toLowerCase().includes(q))));
+    },
+    get summary() {
+      const n = s => this.requests.filter(r => r.status === s).length;
+      const today = this.requests.filter(r => r.status === 'Approved' && r.from <= TODAY && r.to >= TODAY).length;
+      return [
+        { label: 'Pending approval', value: n('Pending'),  bg: 'bg-amber-50',   color: 'text-amber-500',   icon: ICONS.clock },
+        { label: 'Approved',         value: n('Approved'), bg: 'bg-emerald-50', color: 'text-emerald-600', icon: ICONS.check },
+        { label: 'On leave today',   value: today,          bg: 'bg-brand-50',   color: 'text-brand-600',   icon: ICONS.cal },
+        { label: 'Rejected',         value: n('Rejected'), bg: 'bg-red-50',     color: 'text-red-500',     icon: ICONS.x },
+      ];
+    },
+    get formDays() { return this.form.from && this.form.to ? this.days(this.form.from, this.form.to) : 0; },
+    /* working days (Mon–Fri) between two ISO dates, inclusive */
+    days(from, to) {
+      let n = 0;
+      for (let d = _d(from); d <= _d(to); d.setDate(d.getDate() + 1)) { const w = d.getDay(); if (w !== 0 && w !== 6) n++; }
+      return n;
+    },
+    range(r) {
+      const f = d => _d(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const y = _d(r.to).getFullYear();
+      return (r.from === r.to ? f(r.from) : f(r.from) + ' – ' + f(r.to)) + ', ' + y;
+    },
+    initials(name) { return name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join(''); },
+    statusStyle(st) {
+      return ({
+        'Pending':  { badge: 'bg-amber-50 text-amber-700',     dot: 'bg-amber-500' },
+        'Approved': { badge: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
+        'Rejected': { badge: 'bg-red-50 text-red-700',         dot: 'bg-red-500' },
+      })[st] || { badge: 'bg-gray-100 text-gray-600', dot: 'bg-gray-400' };
+    },
+    approve(r) { r.status = 'Approved'; this.showToast(r.name + '’s ' + r.type.toLowerCase() + ' leave was approved.', 'success', 'Leave approved'); },
+    reject(r)  { r.status = 'Rejected'; this.showToast(r.name + '’s ' + r.type.toLowerCase() + ' leave was rejected.', 'warning', 'Leave rejected'); },
+    openModal() {
+      this.form = { employee: '', type: '', from: '', to: '', reason: '' };
+      this.errors = {};
+      this.openModalCommon();
+    },
+    validate() {
+      const f = this.form, e = {};
+      if (!f.employee) e.employee = 'Select an employee.';
+      if (!f.type) e.type = 'Select a leave type.';
+      if (!f.from) e.from = 'Choose a start date.';
+      if (!f.to) e.to = 'Choose an end date.';
+      else if (f.from && f.to < f.from) e.to = 'End date can’t be before the start date.';
+      else if (f.from && this.formDays === 0) e.to = 'The selected dates fall on a weekend.';
+      if (!f.reason) e.reason = 'Add a short reason.';
+      this.errors = e;
+      return Object.keys(e).length === 0;
+    },
+    submitForm() {
+      if (!this.validate()) return;
+      const f = this.form, emp = this.employees.find(x => x.name === f.employee);
+      this.requests.unshift({ id: Date.now(), name: emp.name, department: emp.department, type: f.type, from: f.from, to: f.to, reason: f.reason, status: 'Pending', bg: emp.bg, text: emp.text });
+      this.closeModal();
+      this.showToast('Leave request for ' + emp.name + ' was sent for approval.', 'success', 'Request submitted');
+    },
+  };
+}
+</script>
+</body>
+</html>

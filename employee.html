@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <script src="assets/js/theme.js"></script>
   <meta name="theme-color" content="#1473E6">
   <title>TDC HRIS — Employees</title>
   <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png">
@@ -11,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/dark.css">
   <!-- Shared dashboard logic (sidebar, toast, notifications, modal plumbing) -->
   <script src="assets/js/main.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -418,7 +420,7 @@
 
         <div class="flex items-center gap-2 ms-auto">
           <div class="relative">
-            <button @click="notifOpen = !notifOpen"
+            <button @click="notifOpen = !notifOpen; userOpen = false"
                     class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
                     :aria-label="'Notifications' + (unreadCount ? ' (' + unreadCount + ' unread)' : '')"
                     aria-haspopup="true" :aria-expanded="notifOpen.toString()" aria-controls="notif-panel">
@@ -461,16 +463,59 @@
               </div>
             </div>
           </div>
-          <!-- Signed-in user -->
-          <div class="flex items-center gap-3 ms-1 ps-3 sm:ps-4 border-s border-gray-200">
-            <div class="hidden sm:block text-end leading-tight">
-              <p class="text-sm font-semibold text-gray-900 whitespace-nowrap">Juan Dela Cruz</p>
-              <p class="text-[11.5px] font-medium text-gray-500 whitespace-nowrap">HR Manager</p>
-            </div>
-            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ring-2 ring-white shadow-sm" role="img" aria-label="Juan Dela Cruz">JD</div>
-            <button type="button" class="hidden sm:inline-flex p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Sign out" onclick="location.href='login.html'" title="Sign out">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg>
+          <!-- Signed-in user (dropdown: profile, settings, help, dark mode, sign out) -->
+          <div class="relative ms-1 ps-3 sm:ps-4 border-s border-gray-200" @click.outside="userOpen = false" @keydown.escape="userOpen = false">
+            <button type="button" @click="userOpen = !userOpen; notifOpen = false"
+                    class="flex items-center gap-2.5 rounded-full ps-1 pe-2 py-1 sm:ps-3 hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+                    aria-haspopup="menu" :aria-expanded="userOpen.toString()" aria-controls="user-menu" aria-label="Account menu for Juan Dela Cruz">
+              <span class="hidden sm:block text-end leading-tight">
+                <span class="block text-sm font-semibold text-gray-900 whitespace-nowrap">Juan Dela Cruz</span>
+                <span class="block text-[11.5px] font-medium text-gray-500 whitespace-nowrap">HR Manager</span>
+              </span>
+              <span class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ring-2 ring-white shadow-sm" aria-hidden="true">JD</span>
+              <svg class="w-4 h-4 text-gray-400 transition-transform" :class="{ 'rotate-180': userOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </button>
+
+            <div id="user-menu" role="menu" aria-label="Account"
+                 x-show="userOpen" x-transition style="display:none"
+                 class="absolute end-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-card border border-gray-100 z-40 overflow-hidden">
+              <div class="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100">
+                <span class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0" aria-hidden="true">JD</span>
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-gray-900 truncate">Juan Dela Cruz</p>
+                  <p class="text-xs text-gray-500 truncate">juan.delacruz@stockmaster.com</p>
+                </div>
+              </div>
+              <div class="p-1.5">
+                <a href="#" role="menuitem" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                  My Profile
+                </a>
+                <a href="#" role="menuitem" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
+                  Account Settings
+                </a>
+                <a href="#" role="menuitem" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg>
+                  Help &amp; Support
+                </a>
+                <!-- Dark mode switch (stays open so the change is visible) -->
+                <button type="button" role="menuitemcheckbox" :aria-checked="dark.toString()" @click="toggleDark()"
+                        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors text-start">
+                  <svg x-show="!dark" class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></svg>
+                  <svg x-show="dark" x-cloak class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>
+                  <span class="flex-1">Dark mode</span>
+                  <span class="menu-switch" :class="{ 'is-on': dark }" aria-hidden="true"></span>
+                </button>
+              </div>
+              <div class="p-1.5 border-t border-gray-100">
+                <button type="button" role="menuitem" onclick="location.href='login.html'"
+                        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors text-start">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg>
+                  Sign Out
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -489,11 +534,11 @@
           <p class="text-sm text-gray-500 mt-1">Manage employee records and employment details.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <button type="button" @click="showToast('Employee list exported as CSV.', 'success', 'Export ready')" class="flex items-center gap-2 px-3.5 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-lg transition-colors min-h-[40px]">
+          <button type="button" @click="showToast('Employee list exported as CSV.', 'success', 'Export ready')" class="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-xl transition-colors min-h-[40px]">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /></svg>
             Export
           </button>
-          <button type="button" @click="openModal()" class="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm min-h-[40px]">
+          <button type="button" @click="openModal()" class="flex items-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm min-h-[40px]">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
             Add Employee
           </button>
@@ -523,15 +568,15 @@
               <svg class="w-4 h-4 text-gray-400 absolute start-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></svg>
               <label for="emp-search" class="sr-only">Search employees</label>
               <input id="emp-search" type="search" x-model.trim="search" placeholder="Search name, ID or title"
-                     class="w-full min-h-[40px] ps-9 pe-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50/60 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-brand-400 transition-colors">
+                     class="field ps-9">
             </div>
             <label for="emp-filter-dept" class="sr-only">Filter by department</label>
-            <select id="emp-filter-dept" x-model="dept" class="min-h-[40px] px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-400">
+            <select id="emp-filter-dept" x-model="dept" class="field w-auto">
               <option value="">All departments</option>
               <template x-for="d in departments" :key="d"><option :value="d" x-text="d"></option></template>
             </select>
             <label for="emp-filter-status" class="sr-only">Filter by status</label>
-            <select id="emp-filter-status" x-model="status" class="min-h-[40px] px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-400">
+            <select id="emp-filter-status" x-model="status" class="field w-auto">
               <option value="">All statuses</option>
               <option>Active</option><option>On Leave</option><option>Inactive</option>
             </select>

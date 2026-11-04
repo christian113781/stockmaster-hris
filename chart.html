@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <script src="assets/js/theme.js"></script>
+  <meta name="theme-color" content="#1473E6">
+  <title>TDC HRIS — Chart Overview</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png">
+  <link rel="icon" href="assets/img/favicon.ico" sizes="any">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/dark.css">
+  <!-- Shared dashboard logic (sidebar, toast, notifications, modal plumbing) -->
+  <script src="assets/js/main.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="assets/js/tailwind-config.js"></script>
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<style>
+  .chartpage{--bg:#F4F8FD;--card:#fff;--ink:#1B2433;--muted:#667085;--line:#E4EBF5}
+
+  :root{
+    --bg:#F4F8FD; --card:#fff; --ink:#1B2433; --muted:#667085; --line:#E4EBF5;
+    --b50:#E8F3FF; --b100:#D3E8FF; --b300:#6DB3FA; --b400:#19B5FE; --b500:#3A8FEF; --b600:#1473E6; --b800:#0B4690; --b900:#0B2D5C;
+    --ok:#10B981; --warn:#F59E0B; --bad:#EF4444; --vio:#8B5CF6; --sky:#0EA5E9;
+    --shadow:0 1px 4px rgba(20,115,230,.08),0 4px 16px rgba(20,115,230,.06);
+  }
+    *{box-sizing:border-box}
+  h2.sec{font-size:17.5px;font-weight:600;margin:28px 0 4px;color:#111827}
+  .sub{color:var(--muted);margin:0 0 16px;font-size:12.5px}
+  .grid{display:grid;gap:16px}
+  .g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+  .g3{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .card h3{margin:0 0 2px;font-size:15.5px;font-weight:600}
+  .card .sub{margin-bottom:14px}
+  .kpi{display:flex;gap:14px;align-items:center}
+  .ico{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;flex:none}
+  .ico svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .kpi .v{font-size:26px;font-weight:600;line-height:1.1}
+  .kpi .l{color:var(--muted);font-size:12.5px}
+  .kpi .n{font-size:11.5px;color:var(--muted)}
+  svg text{font-family:Poppins,sans-serif}
+  .axis{fill:var(--muted);font-size:11px}
+  .gridline{stroke:var(--line);stroke-width:1}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;font-size:12px;color:var(--muted)}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  .donutwrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  .donutwrap svg{flex:none}
+  .donutwrap .legend{flex-direction:column;margin:0}
+  /* page cards */
+  .page{display:flex;flex-direction:column;gap:8px}
+  .page .top{display:flex;align-items:center;gap:12px}
+  .page code,.mono{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--b600);background:var(--b50);padding:1px 8px;border-radius:6px}
+  .page ul{margin:0;padding-left:18px;color:var(--muted);font-size:12.5px}
+  .pill{display:inline-block;font-size:11.5px;padding:1px 10px;border-radius:99px;font-weight:500}
+  .p-ok{background:#E7F8F1;color:#047857}.p-warn{background:#FEF3C7;color:#B45309}.p-bad{background:#FEE2E2;color:#B91C1C}.p-info{background:var(--b50);color:var(--b600)}.p-gray{background:#EEF1F5;color:#555F70}
+  /* people cards */
+  .person{display:flex;gap:12px;align-items:flex-start}
+  .av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:12.5px;flex:none}
+  .person .nm{font-weight:600;font-size:13.5px;line-height:1.3}
+  .person .rl{color:var(--muted);font-size:12px}
+  .person .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .chip{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:4px 14px;font:inherit;font-size:12.5px;cursor:pointer}
+  .chip[aria-pressed=true]{background:var(--b600);border-color:var(--b600);color:#fff}
+  .chip:focus-visible{outline:2px solid var(--b500);outline-offset:2px}
+  /* flow */
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap}
+  .step{flex:1 1 180px;position:relative;padding:14px 16px;border:1px solid var(--line);background:var(--card);border-radius:12px;margin:0 22px 12px 0}
+  .step:not(:last-child)::after{content:"";position:absolute;right:-22px;top:50%;width:22px;height:2px;background:var(--b300)}
+  .step:not(:last-child)::before{content:"";position:absolute;right:-24px;top:calc(50% - 4px);border:5px solid transparent;border-left:7px solid var(--b300)}
+  .step .num{width:24px;height:24px;border-radius:50%;background:var(--b600);color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center;margin-bottom:8px}
+  .step b{display:block;font-weight:600}
+  .step span{color:var(--muted);font-size:12px}
+  @media(max-width:620px){.step{margin-right:0}.step::after,.step::before{display:none!important}}
+  /* leaves */
+  .event{display:flex;gap:12px;align-items:center}
+  .date{width:48px;text-align:center;border-radius:10px;background:var(--b50);color:var(--b600);padding:4px 0;flex:none}
+  .date small{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em}
+  .date b{font-size:17px;line-height:1.1}
+  .date.soon{background:#FEF3C7;color:#B45309}
+  @media(max-width:480px){.g2{grid-template-columns:1fr}}
+
+</style>
+</head>
+<body class="font-poppins text-gray-800 antialiased" x-data="chartPage()" x-cloak>
+
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<!-- ════ MOBILE OVERLAY ════ -->
+<div id="sidebar-overlay"
+     class="fixed inset-0 bg-gray-900/50 z-20 lg:hidden"
+     aria-hidden="true"
+     x-show="mobileOpen"
+     x-transition.opacity
+     @click="closeMobileSidebar()"
+     style="display:none"></div>
+
+<!-- ════ TOAST ════ -->
+<div id="toast" role="status" aria-live="polite" aria-atomic="true" :class="{ show: toast.show }" :data-type="toast.type" :style="'--toast-duration:' + toast.duration + 'ms'">
+  <div class="toast-icon" :class="toastStyle.bg" aria-hidden="true">
+    <svg class="w-5 h-5" :class="toastStyle.color" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x-html="toastStyle.icon"></svg>
+  </div>
+  <div class="min-w-0 flex-1">
+    <p class="toast-title" x-text="toast.title"></p>
+    <p class="toast-msg" x-text="toast.msg"></p>
+  </div>
+  <button type="button" class="toast-close" @click="hideToast()" aria-label="Dismiss notification">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+  </button>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     LAYOUT SHELL
+════════════════════════════════════════════════ -->
+<div class="flex min-h-[100dvh]">
+
+  <!-- ════════════════════════════════════════════
+       SIDEBAR SECTION (shared markup + shared data
+       from main.js: navSections, sidebarCollapsed, mobileOpen)
+  ════════════════════════════════════════════════ -->
+  <aside id="sidebar"
+         aria-label="Primary navigation"
+         class="bg-white flex flex-col shadow-card flex-shrink-0 relative z-30"
+         :class="{ collapsed: sidebarCollapsed, 'mobile-open': mobileOpen }">
+
+    <!-- Logo -->
+    <div class="logo-wrap flex items-center px-4 py-4 border-b border-gray-100 flex-shrink-0">
+      <img src="assets/img/tdc-logo-full.png" alt="Tagum Doctors College, Inc." class="logo-full w-full h-auto max-h-11 object-contain object-left">
+      <img src="assets/img/tdc-mark.png" alt="Tagum Doctors College" width="40" height="40" class="logo-mark w-10 h-10 object-contain">
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 sidebar-scroll py-3 px-2" aria-label="Primary">
+      <template x-for="section in navSections" :key="section.label">
+        <div>
+          <p class="nav-section-label px-3 mb-2 mt-4 first:mt-0 text-[11.5px] font-semibold text-gray-400 uppercase tracking-wider" x-text="section.label"></p>
+          <ul class="space-y-0.5" role="list">
+            <template x-for="item in section.items" :key="item.name">
+              <li>
+                <a :href="item.href" class="nav-link flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+                   :class="'rounded-md'"
+                   :aria-current="item.active ? 'page' : null" :title="item.name">
+                  <svg class="w-5 h-5 flex-shrink-0" :class="item.active ? 'text-brand-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" x-html="item.icon"></svg>
+                  <span class="nav-label" x-text="item.name"></span>
+                </a>
+              </li>
+            </template>
+          </ul>
+        </div>
+      </template>
+    </nav>
+
+    <!-- User -->
+    <div class="border-t border-gray-100 px-3 py-4 flex-shrink-0">
+      <div class="user-wrap flex items-center gap-3">
+        <div class="user-avatar w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center flex-shrink-0 text-white text-xs font-bold" aria-hidden="true">JD</div>
+        <div class="user-info min-w-0">
+          <p class="text-sm font-semibold text-gray-800 truncate">Juan Dela Cruz</p>
+          <p class="text-xs text-gray-500 truncate">HR Manager</p>
+        </div>
+        <button class="user-info ms-auto p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                aria-label="Sign out" onclick="location.href='login.html'">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══════════════════════════════════ -->
+  <div class="flex-1 flex flex-col min-w-0">
+
+    <!-- ════════════════════════════════════════════
+         HEADER SECTION (shared markup + shared data
+         from main.js: toast, notifications, signed-in user)
+    ════════════════════════════════════════════════ -->
+    <header class="sticky top-0 z-10 bg-white border-b border-gray-100 shadow-sm">
+      <div class="flex items-center gap-3 px-4 sm:px-6 py-3.5">
+        <!-- Desktop sidebar toggle -->
+        <button id="collapse-btn"
+                class="hidden lg:flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-brand-600 transition-colors flex-shrink-0"
+                :class="{ 'is-collapsed': sidebarCollapsed }"
+                @click="sidebarCollapsed = !sidebarCollapsed"
+                :aria-expanded="(!sidebarCollapsed).toString()" aria-controls="sidebar"
+                :aria-label="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="18" height="18" x="3" y="3" rx="2" />
+            <path d="M9 3v18" />
+          </svg>
+        </button>
+
+        <!-- Mobile menu btn -->
+        <button id="menu-btn"
+                class="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+                @click="mobileOpen ? closeMobileSidebar() : openMobileSidebar()"
+                :aria-expanded="mobileOpen.toString()" aria-controls="sidebar"
+                :aria-label="mobileOpen ? 'Close navigation menu' : 'Open navigation menu'">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16" /><path d="M4 12h16" /><path d="M4 19h16" /></svg>
+        </button>
+
+        <!-- Breadcrumb -->
+        <nav aria-label="Breadcrumb" class="flex-1 min-w-0 text-sm">
+          <ol class="flex items-center gap-2">
+            <li class="hidden sm:block text-gray-400">Workspace</li>
+            <li class="hidden sm:block text-gray-300" aria-hidden="true">/</li>
+            <li class="font-semibold text-gray-900 truncate" aria-current="page">Chart Overview</li>
+          </ol>
+        </nav>
+
+        <div class="flex items-center gap-2 ms-auto">
+          <div class="relative">
+            <button @click="notifOpen = !notifOpen; userOpen = false"
+                    class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+                    :aria-label="'Notifications' + (unreadCount ? ' (' + unreadCount + ' unread)' : '')"
+                    aria-haspopup="true" :aria-expanded="notifOpen.toString()" aria-controls="notif-panel">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /></svg>
+              <span class="absolute -top-0.5 -end-0.5 min-w-[17px] h-[17px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none flex items-center justify-center ring-2 ring-white" aria-hidden="true" x-show="unreadCount > 0" x-text="unreadCount"></span>
+            </button>
+
+            <div id="notif-panel" role="menu" aria-label="Notifications"
+                 x-show="notifOpen" x-transition
+                 @click.outside="notifOpen = false" @keydown.escape="notifOpen = false"
+                 class="fixed inset-x-3 top-[4.25rem] sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-2 sm:w-96 bg-white rounded-2xl shadow-card border border-gray-100 z-40 overflow-hidden"
+                 style="display:none">
+              <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <h2 class="text-sm font-bold text-gray-900">Notifications</h2>
+                <button @click="markAllRead()" x-show="unreadCount > 0"
+                        class="text-xs font-semibold text-brand-600 hover:text-brand-700">Mark all as read</button>
+              </div>
+              <ul class="max-h-80 overflow-y-auto divide-y divide-gray-50" role="list">
+                <template x-for="n in notifications" :key="n.id">
+                  <li>
+                    <button @click="markRead(n)" class="w-full flex items-start gap-3 px-4 py-3 text-start hover:bg-gray-50/60 transition-colors" :class="{ 'bg-brand-50/40': !n.read }">
+                      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" :class="n.iconBg" aria-hidden="true">
+                        <svg class="w-4 h-4" :class="n.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x-html="n.icon"></svg>
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium text-gray-800 truncate" x-text="n.title"></p>
+                        <p class="text-xs text-gray-500 mt-0.5" x-text="n.message"></p>
+                        <p class="text-xs text-gray-500 mt-1" x-text="n.time"></p>
+                      </div>
+                      <span class="w-2 h-2 rounded-full bg-brand-500 flex-shrink-0 mt-1.5" aria-hidden="true" x-show="!n.read"></span>
+                    </button>
+                  </li>
+                </template>
+                <li x-show="notifications.length === 0">
+                  <p class="px-4 py-8 text-center text-sm text-gray-400">You're all caught up.</p>
+                </li>
+              </ul>
+              <div class="px-4 py-3 border-t border-gray-100 text-center">
+                <a href="#" class="text-xs font-semibold text-brand-600 hover:text-brand-700">View all notifications</a>
+              </div>
+            </div>
+          </div>
+          <!-- Signed-in user (dropdown: profile, settings, help, dark mode, sign out) -->
+          <div class="relative ms-1 ps-3 sm:ps-4 border-s border-gray-200" @click.outside="userOpen = false" @keydown.escape="userOpen = false">
+            <button type="button" @click="userOpen = !userOpen; notifOpen = false"
+                    class="flex items-center gap-2.5 rounded-full ps-1 pe-2 py-1 sm:ps-3 hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+                    aria-haspopup="menu" :aria-expanded="userOpen.toString()" aria-controls="user-menu" aria-label="Account menu for Juan Dela Cruz">
+              <span class="hidden sm:block text-end leading-tight">
+                <span class="block text-sm font-semibold text-gray-900 whitespace-nowrap">Juan Dela Cruz</span>
+                <span class="block text-[11.5px] font-medium text-gray-500 whitespace-nowrap">HR Manager</span>
+              </span>
+              <span class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ring-2 ring-white shadow-sm" aria-hidden="true">JD</span>
+              <svg class="w-4 h-4 text-gray-400 transition-transform" :class="{ 'rotate-180': userOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+
+            <div id="user-menu" role="menu" aria-label="Account"
+                 x-show="userOpen" x-transition style="display:none"
+                 class="absolute end-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-card border border-gray-100 z-40 overflow-hidden">
+              <div class="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100">
+                <span class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0" aria-hidden="true">JD</span>
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-gray-900 truncate">Juan Dela Cruz</p>
+                  <p class="text-xs text-gray-500 truncate">juan.delacruz@stockmaster.com</p>
+                </div>
+              </div>
+              <div class="p-1.5">
+                <a href="#" role="menuitem" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                  My Profile
+                </a>
+                <a href="#" role="menuitem" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
+                  Account Settings
+                </a>
+                <a href="#" role="menuitem" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg>
+                  Help &amp; Support
+                </a>
+                <!-- Dark mode switch (stays open so the change is visible) -->
+                <button type="button" role="menuitemcheckbox" :aria-checked="dark.toString()" @click="toggleDark()"
+                        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors text-start">
+                  <svg x-show="!dark" class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></svg>
+                  <svg x-show="dark" x-cloak class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>
+                  <span class="flex-1">Dark mode</span>
+                  <span class="menu-switch" :class="{ 'is-on': dark }" aria-hidden="true"></span>
+                </button>
+              </div>
+              <div class="p-1.5 border-t border-gray-100">
+                <button type="button" role="menuitem" onclick="location.href='login.html'"
+                        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors text-start">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg>
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+
+    <!-- MAIN -->
+    <main id="main" tabindex="-1" class="chartpage flex-1 px-4 sm:px-6 py-6 space-y-5 max-w-[1600px] mx-auto w-full">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Chart Overview</h1>
+          <p class="text-sm text-gray-500 mt-1">Charts, cards and diagrams built from the HRIS sample data.</p>
+        </div>
+      </div>
+<section class="grid g4" id="kpis" aria-label="Key numbers"></section>
+
+  <h2 class="sec">Workforce</h2>
+  <p class="sub">Computed from the 12 sample employees in <span class="mono">employee.html</span>.</p>
+  <div class="grid g2">
+    <div class="card"><h3>Headcount by department</h3><p class="sub">8 departments · the dashboard page only shows the top 5</p><div id="deptChart"></div></div>
+    <div class="card"><h3>Monthly base payroll by department</h3><p class="sub">₱ thousands · total ₱302,000</p><div id="payChart"></div></div>
+  </div>
+  <div class="grid g3" style="margin-top:16px">
+    <div class="card"><h3>Employee status</h3><p class="sub">Active, on leave, inactive</p><div class="donutwrap" id="statusDonut"></div></div>
+    <div class="card"><h3>Employment type</h3><p class="sub">Regular vs. probationary vs. contractual</p><div class="donutwrap" id="typeDonut"></div></div>
+    <div class="card"><h3>Mobile app accounts</h3><p class="sub">From <span class="mono">user.html</span></p><div class="donutwrap" id="acctDonut"></div></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>Weekly attendance</h3><p class="sub">% of active employees present, Sat–Fri</p><div id="attChart"></div></div>
+    <div class="card"><h3>Hires by year</h3><p class="sub">Based on each employee’s join date</p><div id="hireChart"></div></div>
+  </div>
+
+  <h2 class="sec">People</h2>
+  <p class="sub">Directory cards — filter by status.</p>
+  <div class="filters" id="filters" role="group" aria-label="Filter by status"></div>
+  <div class="grid g3" id="people"></div>
+
+  <h2 class="sec">Leave &amp; upcoming</h2>
+  <p class="sub">Pending requests and calendar items on the dashboard.</p>
+  <div class="grid g3" id="leaves"></div>
+  <div class="grid g3" id="events" style="margin-top:16px"></div>
+
+  <h2 class="sec">How the site is connected</h2>
+  <p class="sub">Every page shares the same sidebar, toast, notifications and modal logic from <span class="mono">main.js</span>.</p>
+  <div class="card">
+    <svg id="sitemap" viewBox="0 0 1100 430" width="100%" role="img" aria-label="Site map: login and register lead to the dashboard, which links to employees, user management, components and 404. Shared assets feed every page."></svg>
+  </div>
+
+  <h2 class="sec">Pages</h2>
+  <p class="sub">What each file does.</p>
+  <div class="grid g3" id="pages"></div>
+
+  <h2 class="sec">Add Employee flow</h2>
+  <p class="sub">The 3-step modal on the dashboard and employee pages. Steps 1 and 2 validate required fields.</p>
+  <div class="flow" id="flow"></div>
+
+    </main>
+
+    <footer class="border-t border-gray-100 px-6 py-4 text-center text-xs text-gray-400">
+      Tagum Doctors College, Inc. &copy; 2026
+    </footer>
+  </div>
+</div>
+
+<script>
+function chartPage(){ return { ...sharedChrome('chart.html') }; }
+
+/* ───────── DATA (copied from the project's employee.html / user.html / index.html) ───────── */
+const employees=[
+ ["Juan Dela Cruz","EMP-1001","Human Resources","HR Manager","Regular","Active","2019-06-03",30000],
+ ["Maria Santos","EMP-1002","Academics","Associate Professor","Regular","Active","2021-11-02",30000],
+ ["Paolo Mendoza","EMP-1003","Academics","Instructor","Regular","Active","2022-06-15",26000],
+ ["Angela Cruz","EMP-1004","Academics","Instructor","Probationary","On Leave","2023-08-07",25000],
+ ["John Dela Cruz","EMP-1005","Information Technology","IT Officer","Regular","Active","2020-02-17",30000],
+ ["Mark Villanueva","EMP-1006","Information Technology","Systems Support","Contractual","Active","2024-01-22",24000],
+ ["Ana Reyes","EMP-1007","Registrar","Registrar Clerk","Regular","Active","2021-07-12",22000],
+ ["Daniel Garcia","EMP-1008","Registrar","Records Officer","Regular","Inactive","2018-10-01",23000],
+ ["Liza Ramos","EMP-1009","Finance","Accountant","Regular","Active","2020-09-14",28000],
+ ["Rhea Navarro","EMP-1010","Library","Librarian","Regular","Active","2022-03-28",24000],
+ ["Jose Aquino","EMP-1011","Guidance","Guidance Counselor","Regular","Active","2023-05-08",25000],
+ ["Ramon Torres","EMP-1012","Maintenance","Facilities Staff","Regular","Active","2019-08-19",15000],
+].map(r=>({name:r[0],id:r[1],dept:r[2],title:r[3],type:r[4],status:r[5],joined:r[6],salary:r[7]}));
+const accounts=[["Active",8],["Locked",2],["Not activated",2]]; // verified against user.html rows
+const attendance=[["Sat",91],["Sun",86],["Mon",93],["Tue",89],["Wed",96],["Thu",90],["Fri",90]];
+const leaves=[
+ {n:"Maria Santos",i:"MS",d:"Faculty",t:"Vacation Leave",dt:"Oct 30, 2026",c:"p-warn"},
+ {n:"John Dela Cruz",i:"JD",d:"IT Staff",t:"Sick Leave",dt:"Oct 29, 2026",c:"p-bad"},
+ {n:"Ana Reyes",i:"AR",d:"Administrative",t:"Personal Leave",dt:"Oct 28, 2026",c:"p-info"}];
+const events=[
+ {m:"Oct",d:"31",soon:1,t:"Payroll Processing",s:"Monthly payroll computation",tm:"9:00 AM"},
+ {m:"Nov",d:"02",soon:0,t:"Staff Meeting",s:"HR Department Meeting",tm:"10:00 AM"},
+ {m:"Nov",d:"15",soon:0,t:"Deadline: Leave Credits Update",s:"Update employee leave credits",tm:"5:00 PM"}];
+const pages=[
+ ["index.html","HR Dashboard","Headcount, attendance, leave requests, department mix and the Add Employee modal.","p-info","Main"],
+ ["employee.html","Employee Directory","Summary tiles, search, department and status filters, detail drawer, Add Employee form.","p-info","People"],
+ ["user.html","User Management","Mobile-app accounts: copy username, reset password, lock/unlock, toggle mobile access.","p-info","People"],
+ ["login.html","Sign in","Front-end only — the button goes straight to the dashboard.","p-gray","Account"],
+ ["register.html","Create account","Front-end only; wire go() to Laravel routes.","p-gray","Account"],
+ ["components.html","Design system","Typography, buttons, inputs, tables, modal, toasts and more.","p-ok","Reference"],
+ ["404.html","Not found","Page-not-found screen.","p-gray","Account"]];
+const flow=[
+ ["Personal info","Name, employee ID, department, job title (required) · email, phone"],
+ ["Job details","Start date and salary (required) · type, status, location, manager"],
+ ["Photo & review","Drag-and-drop photo, review summary and annual pay (salary × 13)"],
+ ["Employee added","Modal closes and a success toast confirms who joined which department"]];
+
+/* ───────── helpers ───────── */
+const $=s=>document.querySelector(s);
+const ns="http://www.w3.org/2000/svg";
+const C={brand:"#1473E6",sky:"#19B5FE",b3:"#6DB3FA",ok:"#10B981",warn:"#F59E0B",bad:"#EF4444",vio:"#8B5CF6",gray:"#9AA6B8"};
+const peso=n=>"₱"+n.toLocaleString("en-US");
+const tally=(arr,f)=>{const m=new Map();arr.forEach(x=>m.set(f(x),(m.get(f(x))||0)+1));return [...m]};
+const ICON={
+ users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+ check:'<path d="M20 6 9 17l-5-5"/>',
+ cal:'<path d="M8 2v3M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/>',
+ card:'<rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/>',
+ key:'<circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 8.2-8.2M16 7l3 3"/>',
+ dept:'<path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M14 9h1M9 13h1M14 13h1"/>'
+};
+const initials=n=>n.split(" ").slice(0,2).map(w=>w[0]).join("");
+const PAL=[["#FFE4E6","#E11D48"],["#E0F2FE","#0369A1"],["#EDE9FE","#7C3AED"],["#D1FAE5","#059669"],["#FEF3C7","#D97706"],["#D3E8FF","#0F5CBA"]];
+function el(tag,attrs={},parent){const e=document.createElementNS(ns,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+
+/* ───────── KPI cards ───────── */
+const total=employees.length, active=employees.filter(e=>e.status==="Active").length;
+const payroll=employees.reduce((s,e)=>s+e.salary,0);
+const depts=new Set(employees.map(e=>e.dept)).size;
+const kp=[
+ ["Total employees",total,`${active} currently active`,"users","var(--b50)","var(--b600)"],
+ ["Departments",depts,"Academics is the largest","dept","#EDE9FE","#7C3AED"],
+ ["Monthly base payroll",peso(payroll),`Average ${peso(Math.round(payroll/total))}`,"card","#E0F2FE","#0284C7"],
+ ["Pending leaves",leaves.length,"Awaiting approval","cal","#FEF3C7","#D97706"]];
+$("#kpis").innerHTML=kp.map(k=>`<div class="card kpi"><div class="ico" style="background:${k[4]};color:${k[5]}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON[k[3]]}</svg></div><div><div class="v">${k[1]}</div><div class="l">${k[0]}</div><div class="n">${k[2]}</div></div></div>`).join("");
+
+/* ───────── horizontal bar chart ───────── */
+function hbar(target,data,{color=C.brand,fmt=v=>v,max}={}){
+  const rowH=34,left=172,w=560,h=data.length*rowH+8;
+  const svg=el("svg",{viewBox:`0 0 ${w} ${h}`,width:"100%",role:"img"});
+  const mx=max||Math.max(...data.map(d=>d[1]));
+  data.forEach((d,i)=>{
+    const y=i*rowH+4,bw=(w-left-60)*d[1]/mx;
+    el("text",{x:left-10,y:y+17,"text-anchor":"end",class:"axis",style:"font-size:12px"},svg).textContent=d[0];
+    el("rect",{x:left,y:y+4,width:w-left-60,height:18,rx:5,fill:"var(--b50)"},svg);
+    el("rect",{x:left,y:y+4,width:Math.max(bw,4),height:18,rx:5,fill:color},svg);
+    el("text",{x:left+bw+8,y:y+18,style:"font-size:12px;font-weight:600;fill:var(--ink)"},svg).textContent=fmt(d[1]);
+  });
+  $(target).appendChild(svg);
+  svg.insertAdjacentHTML("beforeend",`<title>${data.map(d=>d[0]+": "+fmt(d[1])).join("; ")}</title>`);
+}
+const byDept=tally(employees,e=>e.dept).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+hbar("#deptChart",byDept,{color:C.brand});
+const payByDept=[...new Map(employees.map(e=>[e.dept,0]))].map(([d])=>[d,employees.filter(e=>e.dept===d).reduce((s,e)=>s+e.salary,0)/1000]).sort((a,b)=>b[1]-a[1]);
+hbar("#payChart",payByDept,{color:C.sky,fmt:v=>"₱"+v+"k"});
+
+/* ───────── donuts ───────── */
+function donut(target,data){
+  const colors=data.map(d=>d[2]),sum=data.reduce((s,d)=>s+d[1],0),r=52,cx=70,cy=70,circ=2*Math.PI*r;
+  const svg=el("svg",{viewBox:"0 0 140 140",width:140,height:140,role:"img","aria-label":data.map(d=>d[0]+" "+d[1]).join(", ")});
+  el("circle",{cx,cy,r,fill:"none",stroke:"var(--b50)","stroke-width":20},svg);
+  let off=0;
+  data.forEach(d=>{
+    const len=circ*d[1]/sum;
+    el("circle",{cx,cy,r,fill:"none",stroke:d[2],"stroke-width":20,"stroke-dasharray":`${Math.max(len-2,0)} ${circ}`,"stroke-dashoffset":-off,transform:`rotate(-90 ${cx} ${cy})`},svg);
+    off+=len;
+  });
+  const t=el("text",{x:cx,y:cy+2,"text-anchor":"middle",style:"font-size:26px;font-weight:600;fill:var(--ink)"},svg);t.textContent=sum;
+  el("text",{x:cx,y:cy+20,"text-anchor":"middle",class:"axis"},svg).textContent="total";
+  const lg=document.createElement("div");lg.className="legend";
+  lg.innerHTML=data.map(d=>`<span><i style="background:${d[2]}"></i>${d[0]} · <b style="color:var(--ink)">${d[1]}</b> (${Math.round(d[1]/sum*100)}%)</span>`).join("");
+  $(target).append(svg,lg);
+}
+const stCol={Active:C.ok,"On Leave":C.warn,Inactive:C.gray};
+donut("#statusDonut",tally(employees,e=>e.status).map(([k,v])=>[k,v,stCol[k]]));
+const tyCol={Regular:C.brand,Probationary:C.warn,Contractual:C.vio};
+donut("#typeDonut",tally(employees,e=>e.type).map(([k,v])=>[k,v,tyCol[k]]));
+const acCol={Active:C.ok,Locked:C.bad,"Not activated":C.warn};
+donut("#acctDonut",accounts.map(([k,v])=>[k,v,acCol[k]]));
+
+/* ───────── attendance line ───────── */
+(function(){
+  const w=520,h=230,l=36,r=12,t=14,b=30,min=80,max=100;
+  const svg=el("svg",{viewBox:`0 0 ${w} ${h}`,width:"100%",role:"img","aria-label":"Attendance "+attendance.map(a=>a[0]+" "+a[1]+"%").join(", ")});
+  const x=i=>l+(w-l-r)*i/(attendance.length-1), y=v=>t+(h-t-b)*(1-(v-min)/(max-min));
+  [80,85,90,95,100].forEach(v=>{
+    el("line",{x1:l,x2:w-r,y1:y(v),y2:y(v),class:"gridline"},svg);
+    el("text",{x:l-8,y:y(v)+4,"text-anchor":"end",class:"axis"},svg).textContent=v+"%";
+  });
+  const pts=attendance.map((a,i)=>[x(i),y(a[1])]);
+  el("path",{d:"M"+pts.map(p=>p.join(",")).join("L")+`L${x(6)},${y(min)}L${x(0)},${y(min)}Z`,fill:"var(--b600)","fill-opacity":.08},svg);
+  el("path",{d:"M"+pts.map(p=>p.join(",")).join("L"),fill:"none",stroke:C.brand,"stroke-width":2.5,"stroke-linejoin":"round"},svg);
+  attendance.forEach((a,i)=>{
+    el("circle",{cx:pts[i][0],cy:pts[i][1],r:4.5,fill:"var(--card)",stroke:C.brand,"stroke-width":2.5},svg);
+    el("text",{x:pts[i][0],y:pts[i][1]-11,"text-anchor":"middle",style:"font-size:11.5px;font-weight:600;fill:var(--ink)"},svg).textContent=a[1];
+    el("text",{x:pts[i][0],y:h-8,"text-anchor":"middle",class:"axis"},svg).textContent=a[0];
+  });
+  $("#attChart").appendChild(svg);
+})();
+
+/* ───────── hires by year column chart ───────── */
+(function(){
+  const data=tally(employees,e=>e.joined.slice(0,4)).sort((a,b)=>a[0]-b[0]);
+  const w=520,h=230,l=28,b=30,t=22,bw=40;
+  const svg=el("svg",{viewBox:`0 0 ${w} ${h}`,width:"100%",role:"img","aria-label":"Hires by year: "+data.map(d=>d[0]+" "+d[1]).join(", ")});
+  const mx=3,y=v=>t+(h-t-b)*(1-v/mx);
+  [0,1,2,3].forEach(v=>{
+    el("line",{x1:l,x2:w-8,y1:y(v),y2:y(v),class:"gridline"},svg);
+    el("text",{x:l-8,y:y(v)+4,"text-anchor":"end",class:"axis"},svg).textContent=v;
+  });
+  const step=(w-l-8)/data.length;
+  data.forEach((d,i)=>{
+    const cx=l+step*i+step/2;
+    el("rect",{x:cx-bw/2,y:y(d[1]),width:bw,height:y(0)-y(d[1]),rx:6,fill:C.sky},svg);
+    el("text",{x:cx,y:y(d[1])-6,"text-anchor":"middle",style:"font-size:12px;font-weight:600;fill:var(--ink)"},svg).textContent=d[1];
+    el("text",{x:cx,y:h-8,"text-anchor":"middle",class:"axis"},svg).textContent=d[0];
+  });
+  $("#hireChart").appendChild(svg);
+})();
+
+/* ───────── people cards with filter ───────── */
+const stPill={Active:"p-ok","On Leave":"p-warn",Inactive:"p-gray"};
+const tyPill={Regular:"p-info",Probationary:"p-warn",Contractual:"p-gray"};
+let current="All";
+function renderPeople(){
+  const list=employees.filter(e=>current==="All"||e.status===current);
+  $("#people").innerHTML=list.map(e=>{const p=PAL[employees.indexOf(e)%PAL.length];
+    return `<article class="card person"><div class="av" style="background:${p[0]};color:${p[1]}">${initials(e.name)}</div>
+    <div style="min-width:0"><div class="nm">${e.name}</div><div class="rl">${e.title} · ${e.dept}</div>
+    <div class="meta"><span class="pill ${stPill[e.status]}">${e.status}</span><span class="pill ${tyPill[e.type]}">${e.type}</span><span class="pill p-gray">${peso(e.salary)}</span></div>
+    <div class="rl" style="margin-top:8px"><span class="mono">${e.id}</span> · joined ${new Date(e.joined+"T00:00:00").toLocaleDateString("en-US",{month:"short",year:"numeric"})}</div></div></article>`}).join("");
+  document.querySelectorAll("#filters .chip").forEach(c=>c.setAttribute("aria-pressed",c.dataset.f===current));
+}
+$("#filters").innerHTML=["All","Active","On Leave","Inactive"].map(f=>`<button class="chip" data-f="${f}" aria-pressed="false">${f}${f==="All"?"":" · "+employees.filter(e=>e.status===f).length}</button>`).join("");
+$("#filters").addEventListener("click",ev=>{const b=ev.target.closest(".chip");if(b){current=b.dataset.f;renderPeople()}});
+renderPeople();
+
+/* ───────── leave & events ───────── */
+$("#leaves").innerHTML=leaves.map((l,i)=>{const p=PAL[i*2%PAL.length];return `<div class="card person"><div class="av" style="background:${p[0]};color:${p[1]}">${l.i}</div><div><div class="nm">${l.n}</div><div class="rl">${l.d}</div><div class="meta"><span class="pill ${l.c}">${l.t}</span></div><div class="rl" style="margin-top:6px">Requested ${l.dt} · pending</div></div></div>`}).join("");
+$("#events").innerHTML=events.map(e=>`<div class="card event"><div class="date ${e.soon?"soon":""}"><small>${e.m}</small><b>${e.d}</b></div><div><div class="nm" style="font-weight:600">${e.t}</div><div class="rl" style="color:var(--muted);font-size:12px">${e.s} · ${e.tm}</div></div></div>`).join("");
+
+/* ───────── pages cards ───────── */
+$("#pages").innerHTML=pages.map(p=>`<div class="card page"><div class="top"><span class="pill ${p[3]}">${p[4]}</span></div><h3>${p[1]}</h3><code>${p[0]}</code><p style="margin:4px 0 0;color:var(--muted);font-size:12.5px">${p[2]}</p></div>`).join("");
+
+/* ───────── flow ───────── */
+$("#flow").innerHTML=flow.map((f,i)=>`<div class="step"><div class="num">${i+1}</div><b>${f[0]}</b><span>${f[1]}</span></div>`).join("");
+
+/* ───────── site map diagram ───────── */
+(function(){
+  const svg=$("#sitemap");
+  const defs=el("defs",{},svg);
+  const mk=el("marker",{id:"ar",viewBox:"0 0 10 10",refX:9,refY:5,markerWidth:7,markerHeight:7,orient:"auto-start-reverse"},defs);
+  el("path",{d:"M0 0L10 5L0 10z",fill:"#6DB3FA"},mk);
+  function box(x,y,w,h,title,sub,fill,stroke,tc){
+    el("rect",{x,y,width:w,height:h,rx:12,fill,stroke,"stroke-width":1.5},svg);
+    el("text",{x:x+w/2,y:y+h/2-(sub?3:-5),"text-anchor":"middle",style:`font-size:14px;font-weight:600;fill:${tc||"var(--ink)"}`},svg).textContent=title;
+    if(sub)el("text",{x:x+w/2,y:y+h/2+15,"text-anchor":"middle",class:"axis",style:tc?"fill:#fff;opacity:.85":""},svg).textContent=sub;
+  }
+  function arrow(x1,y1,x2,y2,dash){
+    el("path",{d:`M${x1} ${y1} C ${(x1+x2)/2} ${y1}, ${(x1+x2)/2} ${y2}, ${x2} ${y2}`,fill:"none",stroke:"#6DB3FA","stroke-width":2,"marker-end":"url(#ar)","stroke-dasharray":dash?"5 5":""},svg);
+  }
+  const A="var(--card)",L="var(--line)";
+  // column headers
+  [["ENTRY",30],["HUB",330],["SECTIONS",640],["SHARED LAYER",900]].forEach(([t,x])=>el("text",{x,y:24,class:"axis",style:"letter-spacing:.1em;font-weight:600"},svg).textContent=t);
+  box(30,70,200,64,"login.html","Sign in",A,L);
+  box(30,190,200,64,"register.html","Create account",A,L);
+  box(330,120,210,90,"index.html","Dashboard · KPIs · charts","var(--b600)","var(--b600)","#fff");
+  svg.lastChild.previousSibling; // noop
+  box(640,50,200,64,"employee.html","Directory + Add modal",A,L);
+  box(640,140,200,64,"user.html","App accounts",A,L);
+  box(640,230,200,64,"components.html","Design system",A,L);
+  box(640,320,200,64,"404.html","Not found",A,L);
+  arrow(230,102,330,150); arrow(230,222,330,185); arrow(115,190,115,134);
+  arrow(540,150,640,82); arrow(540,165,640,172); arrow(540,180,640,262); arrow(540,195,640,352,true);
+  // shared
+  el("rect",{x:900,y:50,width:180,height:334,rx:14,fill:"var(--b50)",stroke:"#6DB3FA","stroke-dasharray":"6 5"},svg);
+  [["main.js","sidebar · toast · modal"],["tailwind-config.js","brand colours · type"],["style.css","chart · modal · fields"],["assets/img","logo · favicon"]].forEach((s,i)=>{
+    box(915,68+i*76,150,60,s[0],s[1],"var(--card)",L);
+  });
+  el("path",{d:"M900 217 H850",stroke:"#6DB3FA","stroke-width":2,"stroke-dasharray":"5 5","marker-end":"url(#ar)",fill:"none"},svg);
+  el("text",{x:540,y:420,"text-anchor":"middle",class:"axis"},svg).textContent="Solid arrows: sidebar / sign-in navigation · dashed: reached from the sidebar · shared files are loaded by every page";
+})();
+
+</script>
+</body>
+</html>

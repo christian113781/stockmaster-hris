@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <script src="assets/js/theme.js"></script>
   <meta name="theme-color" content="#1473E6">
   <title>TDC HRIS — Components</title>
   <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png">
@@ -11,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/dark.css">
   <!-- Shared dashboard logic (sidebar, toast, notifications, modal plumbing) -->
   <script src="assets/js/main.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -187,7 +189,7 @@
 
         <div class="flex items-center gap-2 ms-auto">
           <div class="relative">
-            <button @click="notifOpen = !notifOpen"
+            <button @click="notifOpen = !notifOpen; userOpen = false"
                     class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
                     :aria-label="'Notifications' + (unreadCount ? ' (' + unreadCount + ' unread)' : '')"
                     aria-haspopup="true" :aria-expanded="notifOpen.toString()" aria-controls="notif-panel">
@@ -230,16 +232,59 @@
               </div>
             </div>
           </div>
-          <!-- Signed-in user -->
-          <div class="flex items-center gap-3 ms-1 ps-3 sm:ps-4 border-s border-gray-200">
-            <div class="hidden sm:block text-end leading-tight">
-              <p class="text-sm font-semibold text-gray-900 whitespace-nowrap">Juan Dela Cruz</p>
-              <p class="text-[11.5px] font-medium text-gray-500 whitespace-nowrap">HR Manager</p>
-            </div>
-            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ring-2 ring-white shadow-sm" role="img" aria-label="Juan Dela Cruz">JD</div>
-            <button type="button" class="hidden sm:inline-flex p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400" aria-label="Sign out" onclick="location.href='login.html'" title="Sign out">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg>
+          <!-- Signed-in user (dropdown: profile, settings, help, dark mode, sign out) -->
+          <div class="relative ms-1 ps-3 sm:ps-4 border-s border-gray-200" @click.outside="userOpen = false" @keydown.escape="userOpen = false">
+            <button type="button" @click="userOpen = !userOpen; notifOpen = false"
+                    class="flex items-center gap-2.5 rounded-full ps-1 pe-2 py-1 sm:ps-3 hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+                    aria-haspopup="menu" :aria-expanded="userOpen.toString()" aria-controls="user-menu" aria-label="Account menu for Juan Dela Cruz">
+              <span class="hidden sm:block text-end leading-tight">
+                <span class="block text-sm font-semibold text-gray-900 whitespace-nowrap">Juan Dela Cruz</span>
+                <span class="block text-[11.5px] font-medium text-gray-500 whitespace-nowrap">HR Manager</span>
+              </span>
+              <span class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ring-2 ring-white shadow-sm" aria-hidden="true">JD</span>
+              <svg class="w-4 h-4 text-gray-400 transition-transform" :class="{ 'rotate-180': userOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </button>
+
+            <div id="user-menu" role="menu" aria-label="Account"
+                 x-show="userOpen" x-transition style="display:none"
+                 class="absolute end-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-card border border-gray-100 z-40 overflow-hidden">
+              <div class="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100">
+                <span class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0" aria-hidden="true">JD</span>
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-gray-900 truncate">Juan Dela Cruz</p>
+                  <p class="text-xs text-gray-500 truncate">juan.delacruz@stockmaster.com</p>
+                </div>
+              </div>
+              <div class="p-1.5">
+                <a href="#" role="menuitem" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                  My Profile
+                </a>
+                <a href="#" role="menuitem" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
+                  Account Settings
+                </a>
+                <a href="#" role="menuitem" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg>
+                  Help &amp; Support
+                </a>
+                <!-- Dark mode switch (stays open so the change is visible) -->
+                <button type="button" role="menuitemcheckbox" :aria-checked="dark.toString()" @click="toggleDark()"
+                        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors text-start">
+                  <svg x-show="!dark" class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></svg>
+                  <svg x-show="dark" x-cloak class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>
+                  <span class="flex-1">Dark mode</span>
+                  <span class="menu-switch" :class="{ 'is-on': dark }" aria-hidden="true"></span>
+                </button>
+              </div>
+              <div class="p-1.5 border-t border-gray-100">
+                <button type="button" role="menuitem" onclick="location.href='login.html'"
+                        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors text-start">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg>
+                  Sign Out
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -270,15 +315,21 @@
       </section>
       <section id="buttons" aria-labelledby="buttons-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
         <h2 id="buttons-h" class="text-base font-bold text-gray-900">Buttons</h2>
-        <p class="text-xs text-gray-500 mt-0.5 mb-5">Primary, secondary, ghost, danger, disabled and icon variants.</p>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">Primary, secondary, close, ghost, danger, disabled and icon variants.</p>
         <div class="flex flex-wrap items-center gap-3">
           <button class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-brand-600 text-white hover:bg-brand-700 shadow-sm">Primary</button>
           <button class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-white text-gray-700 border border-gray-200 hover:bg-gray-50">Secondary</button>
+          <button class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-gray-100 text-gray-600 hover:bg-gray-200">Close</button>
           <button class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] text-brand-600 hover:bg-brand-50">Ghost</button>
           <button class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-red-500 text-white hover:bg-red-600">Danger</button>
           <button class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-brand-600 text-white opacity-50 cursor-not-allowed" disabled>Disabled</button>
           <button class="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-brand-600 text-white hover:bg-brand-700 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="M12 5v14" /></svg> With icon</button>
           <button class="w-10 h-10 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 flex items-center justify-center" aria-label="Settings"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /><circle cx="12" cy="12" r="3" /></svg></button>
+        </div>
+        <p class="text-xs font-semibold text-gray-600 mt-6 mb-2">Dialog footer pair</p>
+        <div class="flex gap-3 max-w-sm">
+          <button type="button" class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-gray-100 text-gray-600 hover:bg-gray-200">Close</button>
+          <button type="button" class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[40px] bg-brand-600 text-white hover:bg-brand-700">Send greeting</button>
         </div>
       </section>
       <section id="actions" aria-labelledby="actions-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
@@ -455,6 +506,178 @@
         <p class="text-xs text-gray-500 mt-0.5 mb-5">Persistent messages shown inside a page.</p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3"><div role="alert" class="flex items-start gap-3 p-4 rounded-xl border bg-emerald-50 border-emerald-100"><span class="text-emerald-700 mt-0.5"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="m16 9-5.5 5.5L8 12" /></svg></span><div><p class="text-sm font-semibold text-emerald-700">Leave approved</p><p class="text-xs text-gray-600 mt-0.5">Maria’s vacation leave was approved.</p></div></div><div role="alert" class="flex items-start gap-3 p-4 rounded-xl border bg-brand-50 border-brand-100"><span class="text-brand-700 mt-0.5"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg></span><div><p class="text-sm font-semibold text-brand-700">New policy</p><p class="text-xs text-gray-600 mt-0.5">The 2027 holiday calendar is available.</p></div></div><div role="alert" class="flex items-start gap-3 p-4 rounded-xl border bg-amber-50 border-amber-100"><span class="text-amber-700 mt-0.5"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg></span><div><p class="text-sm font-semibold text-amber-700">Missing documents</p><p class="text-xs text-gray-600 mt-0.5">2 new hires have incomplete requirements.</p></div></div><div role="alert" class="flex items-start gap-3 p-4 rounded-xl border bg-red-50 border-red-100"><span class="text-red-600 mt-0.5"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg></span><div><p class="text-sm font-semibold text-red-600">Sync failed</p><p class="text-xs text-gray-600 mt-0.5">Timekeeper data could not be imported.</p></div></div></div>
       </section>
+      <section id="announcements" aria-labelledby="announcements-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5" x-data="announcements()">
+        <h2 id="announcements-h" class="text-base font-bold text-gray-900">Announcements</h2>
+        <p class="text-xs text-gray-500 mt-0.5 mb-5">One multi-purpose card for birthdays, anniversaries, new hires, holidays, notices, events and achievements. Pick a type and the colour, icon and action change with it. Any announcement can also open as a popup.</p>
+
+        <!-- Banners -->
+        <p class="text-xs font-semibold text-gray-600 mb-2">Banners</p>
+        <div class="space-y-3 mb-6" x-data="{ b1: true, b2: true }">
+          <div x-show="b1" class="relative overflow-hidden flex items-center gap-3 p-4 pe-12 rounded-xl border bg-rose-50 border-rose-100 text-rose-700">
+            <span class="absolute top-2 start-1/3 w-2 h-2 rounded-full bg-amber-400 opacity-80" aria-hidden="true"></span><span class="absolute bottom-2 start-1/2 w-3 h-1 rotate-45 rounded bg-sky-400 opacity-80" aria-hidden="true"></span><span class="absolute top-3 end-24 w-2 h-2 rotate-12 rounded-sm bg-rose-400 opacity-80" aria-hidden="true"></span><span class="absolute bottom-3 end-14 w-1.5 h-3 -rotate-12 rounded bg-emerald-400 opacity-80" aria-hidden="true"></span>
+            <span class="relative text-2xl" aria-hidden="true">🎂</span>
+            <p class="relative text-sm"><strong class="font-semibold">Happy birthday, Maria Santos!</strong> Wishing you a wonderful year ahead from everyone at TDC.</p>
+            <button type="button" @click="b1 = false" class="absolute top-1/2 -translate-y-1/2 end-3 p-1.5 rounded-lg hover:bg-rose-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-rose-500" aria-label="Dismiss birthday banner"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg></button>
+          </div>
+          <div x-show="b2" role="alert" class="relative flex items-center gap-3 p-4 pe-12 rounded-xl border bg-red-50 border-red-100 text-red-700">
+            <span class="text-xl" aria-hidden="true">⚠️</span>
+            <p class="text-sm"><strong class="font-semibold">Payroll cut-off tomorrow.</strong> Submit attendance corrections before Oct 31, 5:00 PM.</p>
+            <button type="button" @click="b2 = false" class="absolute top-1/2 -translate-y-1/2 end-3 p-1.5 rounded-lg hover:bg-red-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500" aria-label="Dismiss payroll notice"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg></button>
+          </div>
+          <button type="button" x-show="!b1 || !b2" @click="b1 = true; b2 = true" class="text-xs font-semibold text-brand-600 hover:text-brand-700">Show banners again</button>
+        </div>
+
+        <!-- Popup launcher -->
+        <p class="text-xs font-semibold text-gray-600 mb-2">Popup (modal)</p>
+        <div class="flex flex-wrap items-center gap-2 mb-6">
+          <button type="button" @click="showAnn(items, 0, $event)" :disabled="!items.length" class="px-3.5 py-2 rounded-xl text-sm font-semibold min-h-[40px] bg-brand-600 text-white hover:bg-brand-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" x-text="'Show all as popup (' + items.length + ')'"></button>
+          <button type="button" @click="showType('birthday', $event)" class="px-3.5 py-2 rounded-xl text-sm font-semibold min-h-[40px] bg-white text-gray-700 border border-gray-200 hover:bg-gray-50">🎂 Birthday popup</button>
+          <button type="button" @click="showType('urgent', $event)" class="px-3.5 py-2 rounded-xl text-sm font-semibold min-h-[40px] bg-white text-gray-700 border border-gray-200 hover:bg-gray-50">⚠️ Urgent popup</button>
+          <span class="text-xs text-gray-400">Closes with Esc, the X, or a click outside.</span>
+        </div>
+
+        <!-- Cards -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <p class="text-xs font-semibold text-gray-600">Cards <span class="text-gray-400 font-normal" x-text="'· ' + visible.length + ' shown'"></span></p>
+          <div class="flex flex-wrap gap-1.5" role="group" aria-label="Filter announcements by type">
+            <button type="button" @click="filter = ''" :aria-pressed="(filter === '').toString()" class="px-3 py-1 rounded-full text-xs font-semibold border transition-colors" :class="filter === '' ? 'bg-brand-600 border-brand-600 text-white' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'">All</button>
+            <template x-for="(t, k) in T" :key="k">
+              <button type="button" @click="filter = k" :aria-pressed="(filter === k).toString()" class="px-3 py-1 rounded-full text-xs font-semibold border transition-colors" :class="filter === k ? 'bg-brand-600 border-brand-600 text-white' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'" x-text="t.label"></button>
+            </template>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2" aria-live="polite">
+          <template x-for="a in visible" :key="a.id">
+            <article class="relative rounded-2xl border bg-white overflow-hidden ps-5 pe-4 py-4" :class="a.pinned ? 'border-brand-200 shadow-card' : 'border-gray-100'">
+              <span class="absolute inset-y-0 start-0 w-1.5" :class="T[a.type].bar" aria-hidden="true"></span>
+              <div class="flex items-start gap-3">
+                <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0" :class="T[a.type].tile" aria-hidden="true" x-text="T[a.type].emoji"></div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="badge" :class="T[a.type].badge" x-text="T[a.type].label"></span>
+                    <span x-show="a.pinned" class="badge bg-brand-50 text-brand-700"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5" /><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" /></svg>Pinned</span>
+                    <span class="text-[11.5px] text-gray-400 ms-auto" x-text="a.when"></span>
+                  </div>
+                  <h3 class="text-[15.5px] font-semibold text-gray-900 mt-1.5 leading-snug" x-text="a.title"></h3>
+                  <p class="text-sm text-gray-500 mt-0.5" x-text="a.body"></p>
+                  <p x-show="a.meta" class="text-xs text-gray-400 mt-1.5" x-text="a.meta"></p>
+                  <div class="flex flex-wrap items-center gap-2 mt-3">
+                    <button type="button" @click="act(a)" :disabled="!!a.done" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors min-h-[32px]" :class="a.done ? 'bg-emerald-50 text-emerald-700 cursor-default' : 'bg-brand-600 text-white hover:bg-brand-700'" x-text="a.done ? '✓ ' + T[a.type].done : T[a.type].action"></button>
+                    <button type="button" @click="showAnn(visible, visible.indexOf(a), $event)" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-brand-600 hover:bg-brand-50 min-h-[32px]" :aria-label="'Open ' + a.title + ' as popup'">Open popup</button>
+                    <button type="button" @click="dismiss(a)" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-100 min-h-[32px]" :aria-label="'Dismiss ' + a.title">Dismiss</button>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </template>
+        </div>
+        <div x-show="!visible.length" class="rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-500">
+          No announcements here.
+          <button type="button" @click="reset()" class="font-semibold text-brand-600 hover:text-brand-700 ms-1">Restore all</button>
+        </div>
+
+        <!-- Composer -->
+        <div class="mt-6 pt-6 border-t border-gray-100">
+          <p class="text-xs font-semibold text-gray-600 mb-3">Create an announcement</p>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <form @submit.prevent="post()" class="space-y-4" novalidate>
+              <fieldset>
+                <legend class="block text-xs font-semibold text-gray-600 mb-1.5">Type</legend>
+                <div class="flex flex-wrap gap-1.5">
+                  <template x-for="(t, k) in T" :key="k">
+                    <label class="cursor-pointer">
+                      <input type="radio" name="ann-type" class="sr-only peer" :value="k" x-model="draft.type">
+                      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 peer-checked:bg-brand-600 peer-checked:border-brand-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand-400 peer-focus-visible:ring-offset-1"><span aria-hidden="true" x-text="t.emoji"></span><span x-text="t.label"></span></span>
+                    </label>
+                  </template>
+                </div>
+              </fieldset>
+              <div>
+                <label for="ann-title" class="block text-xs font-semibold text-gray-600 mb-1.5">Title</label>
+                <input id="ann-title" class="field" :class="err && !draft.title.trim() ? 'error' : ''" x-model="draft.title" :placeholder="T[draft.type].hint" :aria-invalid="(err && !draft.title.trim()).toString()" aria-describedby="ann-title-e">
+                <p id="ann-title-e" x-show="err && !draft.title.trim()" class="mt-1 text-xs text-red-500" role="alert">Add a title.</p>
+              </div>
+              <div>
+                <label for="ann-body" class="block text-xs font-semibold text-gray-600 mb-1.5">Message</label>
+                <textarea id="ann-body" rows="3" class="field resize-none" x-model="draft.body" placeholder="Write a short message…"></textarea>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="ann-aud" class="block text-xs font-semibold text-gray-600 mb-1.5">Audience</label>
+                  <select id="ann-aud" class="field" x-model="draft.audience">
+                    <option>All employees</option><option>Academics</option><option>Information Technology</option><option>Registrar</option><option>Human Resources</option>
+                  </select>
+                </div>
+                <div class="flex items-end pb-2">
+                  <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer"><input type="checkbox" x-model="draft.pinned" class="w-4 h-4 accent-brand-600"> Pin to the top</label>
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-3">
+                <button type="submit" class="px-4 py-2.5 rounded-xl text-sm font-semibold min-h-[40px] bg-brand-600 text-white hover:bg-brand-700 shadow-sm">Post announcement</button>
+                <button type="button" @click="previewDraft($event)" class="px-4 py-2.5 rounded-xl text-sm font-semibold min-h-[40px] bg-white text-gray-700 border border-gray-200 hover:bg-gray-50">Preview as popup</button>
+              </div>
+            </form>
+            <div>
+              <p class="block text-xs font-semibold text-gray-600 mb-1.5">Live preview</p>
+              <div class="relative rounded-2xl border border-gray-100 bg-gray-50/60 overflow-hidden ps-5 pe-4 py-4">
+                <span class="absolute inset-y-0 start-0 w-1.5" :class="T[draft.type].bar" aria-hidden="true"></span>
+                <div class="flex items-start gap-3">
+                  <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0" :class="T[draft.type].tile" aria-hidden="true" x-text="T[draft.type].emoji"></div>
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="badge" :class="T[draft.type].badge" x-text="T[draft.type].label"></span>
+                      <span x-show="draft.pinned" class="badge bg-brand-50 text-brand-700">Pinned</span>
+                    </div>
+                    <h3 class="text-[15.5px] font-semibold text-gray-900 mt-1.5 leading-snug" x-text="draft.title || T[draft.type].hint"></h3>
+                    <p class="text-sm text-gray-500 mt-0.5" x-text="draft.body || 'Your message appears here.'"></p>
+                    <p class="text-xs text-gray-400 mt-1.5" x-text="'To: ' + draft.audience"></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+              <!-- Announcement popup (teleported to <body> so nothing clips it) -->
+        <template x-teleport="body">
+          <div x-show="annOpen" x-cloak style="display:none" x-transition.opacity.duration.150ms
+               class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/50"
+               role="dialog" aria-modal="true" aria-labelledby="ann-m-title" aria-describedby="ann-m-body"
+               @keydown.escape.window="annOpen && hideAnn()" @click.self="hideAnn()">
+            <div id="ann-dialog" @keydown.tab="trapAnn($event)" x-show="annOpen" x-transition:enter="transition duration-200" x-transition:enter-start="opacity-0 translate-y-3 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                 class="w-full max-w-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto bg-white rounded-2xl shadow-2xl">
+              <template x-if="cur">
+                <div>
+                  <div class="relative overflow-hidden px-6 sm:px-10 pt-12 pb-10 text-center" :class="T[cur.type].head">
+                    <template x-for="(e, i) in T[cur.type].deco" :key="cur.type + 'e' + i"><span class="absolute select-none pointer-events-none" :class="SLOTS[i]" aria-hidden="true" x-text="e"></span></template>
+                    <template x-for="(c, i) in CONFETTI" :key="cur.type + 'c' + i"><span class="absolute pointer-events-none opacity-80" :class="c + ' ' + T[cur.type].dots[i % T[cur.type].dots.length]" aria-hidden="true"></span></template>
+                    <button type="button" id="ann-close" @click="hideAnn()" class="absolute top-4 end-4 z-10 p-2.5 rounded-xl text-gray-500 hover:bg-black/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500" aria-label="Close announcement"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg></button>
+                    <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white shadow-sm ring-8 ring-white/70 flex items-center justify-center text-6xl sm:text-7xl mx-auto" aria-hidden="true" x-text="T[cur.type].emoji"></div>
+                    <span class="relative inline-block mt-5 px-4 py-1 rounded-full bg-white text-xs font-semibold uppercase tracking-widest" :class="T[cur.type].ink" x-text="T[cur.type].label + (cur.pinned ? ' · Pinned' : '')"></span>
+                  </div>
+                  <div class="px-6 sm:px-10 pt-7 pb-8">
+                    <h2 id="ann-m-title" class="text-2xl sm:text-3xl font-bold text-gray-900 text-center leading-tight" x-text="cur.title"></h2>
+                    <p id="ann-m-body" class="text-base sm:text-lg text-gray-500 mt-3 text-center max-w-xl mx-auto" x-text="cur.body"></p>
+                    <p class="text-sm text-gray-400 mt-4 text-center" x-text="[cur.when, cur.meta].filter(Boolean).join(' · ')"></p>
+                    <div class="flex gap-3 mt-7">
+                      <button type="button" @click="hideAnn()" class="flex-1 px-4 py-3 rounded-xl text-base font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 min-h-[48px]">Close</button>
+                      <button type="button" id="ann-primary" @click="act(cur)" :disabled="!!cur.done" class="flex-1 px-4 py-3 rounded-xl text-base font-semibold min-h-[48px] transition-colors" :class="cur.done ? 'bg-emerald-50 text-emerald-700 cursor-default' : 'bg-brand-600 text-white hover:bg-brand-700'" x-text="cur.done ? '✓ ' + T[cur.type].done : T[cur.type].action"></button>
+                    </div>
+                    <label x-show="cur.id" class="flex items-center justify-center gap-2 mt-5 text-sm text-gray-500 cursor-pointer"><input type="checkbox" x-model="hideAgain" class="w-4 h-4 accent-brand-600"> Don’t show this again</label>
+                    <div x-show="annQueue.length > 1" class="flex items-center justify-between mt-6 pt-5 border-t border-gray-100">
+                      <button type="button" @click="stepAnn(-1)" :disabled="annIdx === 0" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">← Previous</button>
+                      <div class="flex items-center gap-1.5" role="status" :aria-label="'Announcement ' + (annIdx + 1) + ' of ' + annQueue.length">
+                        <template x-for="(q, i) in annQueue" :key="i"><span class="h-1.5 rounded-full transition-all" :class="i === annIdx ? 'w-5 bg-brand-600' : 'w-1.5 bg-gray-200'"></span></template>
+                        <span class="text-xs text-gray-400 ms-2" x-text="(annIdx + 1) + ' of ' + annQueue.length"></span>
+                      </div>
+                      <button type="button" @click="stepAnn(1)" :disabled="annIdx === annQueue.length - 1" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-brand-600 hover:bg-brand-50 disabled:opacity-40 disabled:cursor-not-allowed">Next →</button>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </section>
       <section id="progress" aria-labelledby="progress-h" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
         <h2 id="progress-h" class="text-base font-bold text-gray-900">Progress bars and avatars</h2>
         <p class="text-xs text-gray-500 mt-0.5 mb-5">Progress for utilisation and completion; avatars for people.</p>
@@ -494,14 +717,14 @@
         <div x-data="{ page: 1, total: 3 }" class="flex justify-end">
           <nav aria-label="Pagination" class="flex items-center gap-2">
             <button type="button" @click="page--" :disabled="page === 1"
-                    class="px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:text-gray-300 disabled:hover:bg-white disabled:cursor-not-allowed">← Prev</button>
+                    class="px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:text-gray-300 disabled:hover:bg-white disabled:cursor-not-allowed">← Prev</button>
             <template x-for="n in total" :key="n">
               <button type="button" @click="page = n" x-text="n" :aria-current="page === n ? 'page' : null"
-                      class="w-10 h-10 rounded-lg text-sm font-semibold transition-colors"
+                      class="w-10 h-10 rounded-xl text-sm font-semibold transition-colors"
                       :class="page === n ? 'bg-brand-600 text-white shadow-sm' : 'text-gray-600 hover:bg-brand-50'"></button>
             </template>
             <button type="button" @click="page++" :disabled="page === total"
-                    class="px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:text-gray-300 disabled:hover:bg-white disabled:cursor-not-allowed">Next →</button>
+                    class="px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:text-gray-300 disabled:hover:bg-white disabled:cursor-not-allowed">Next →</button>
           </nav>
         </div>
       </section>
@@ -722,6 +945,105 @@ function calendar() {
     isToday(d) { return d === now.getDate() && this.m === now.getMonth() && this.y === now.getFullYear(); },
     move(n) { this.m += n; if (this.m < 0) { this.m = 11; this.y--; } if (this.m > 11) { this.m = 0; this.y++; } },
     pick(d) { this.selected = this.key(d); },
+  };
+}
+function announcements() {
+  const T = {
+    birthday:    { label: 'Birthday',    emoji: '🎂', tile: 'bg-rose-50',    badge: 'bg-rose-50 text-rose-600',       bar: 'bg-rose-400',    action: 'Send greeting',  done: 'Greeting sent', hint: 'Happy birthday, Name!' },
+    anniversary: { label: 'Anniversary', emoji: '🎉', tile: 'bg-sky-50',     badge: 'bg-sky-50 text-sky-700',         bar: 'bg-sky-400',     action: 'Congratulate',   done: 'Congratulated', hint: 'Name marks 5 years with TDC' },
+    welcome:     { label: 'New hire',    emoji: '👋', tile: 'bg-emerald-50', badge: 'bg-emerald-50 text-emerald-700', bar: 'bg-emerald-500', action: 'Say hello',      done: 'Greeted',       hint: 'Welcome Name to the team' },
+    holiday:     { label: 'Holiday',     emoji: '🏖️', tile: 'bg-violet-50',  badge: 'bg-violet-50 text-violet-700',   bar: 'bg-violet-400',  action: 'Add to calendar', done: 'Added',        hint: 'No classes on Nov 30' },
+    notice:      { label: 'Notice',      emoji: '📢', tile: 'bg-amber-50',   badge: 'bg-amber-50 text-amber-700',     bar: 'bg-amber-400',   action: 'Acknowledge',    done: 'Acknowledged',  hint: 'New attendance policy' },
+    urgent:      { label: 'Urgent',      emoji: '⚠️', tile: 'bg-red-50',     badge: 'bg-red-50 text-red-700',         bar: 'bg-red-500',     action: 'Acknowledge',    done: 'Acknowledged',  hint: 'Action needed today' },
+    event:       { label: 'Event',       emoji: '📅', tile: 'bg-brand-50',   badge: 'bg-brand-50 text-brand-700',     bar: 'bg-brand-500',   action: 'RSVP',           done: 'Going',         hint: 'Staff meeting on Nov 2' },
+    achievement: { label: 'Achievement', emoji: '🏆', tile: 'bg-yellow-50',  badge: 'bg-yellow-50 text-yellow-700',   bar: 'bg-yellow-400',  action: 'Congratulate',   done: 'Congratulated', hint: 'Name earned a certification' },
+  };
+  /* Flat popup styling + decorations per type (no gradients) */
+  const STYLE = {
+    birthday:    { head: 'bg-rose-50',    ink: 'text-rose-600',    dots: ['bg-rose-400', 'bg-amber-400', 'bg-sky-400'],       deco: ['🎈', '🎈', '🎊', '🎁'] },
+    anniversary: { head: 'bg-sky-50',     ink: 'text-sky-700',     dots: ['bg-sky-400', 'bg-amber-400', 'bg-violet-400'],     deco: ['✨', '🎉', '⭐', '✨'] },
+    welcome:     { head: 'bg-emerald-50', ink: 'text-emerald-700', dots: ['bg-emerald-400', 'bg-sky-400', 'bg-amber-400'],    deco: ['🌱', '🤝', '✨', '🌿'] },
+    holiday:     { head: 'bg-violet-50',  ink: 'text-violet-700',  dots: ['bg-violet-400', 'bg-amber-400', 'bg-rose-400'],    deco: ['🌴', '☀️', '🏖️', '🌺'] },
+    notice:      { head: 'bg-amber-50',   ink: 'text-amber-700',   dots: ['bg-amber-400', 'bg-brand-400', 'bg-rose-400'],     deco: ['📌', '📎', '📝', '📌'] },
+    urgent:      { head: 'bg-red-50',     ink: 'text-red-700',     dots: ['bg-red-400', 'bg-amber-400', 'bg-red-300'],        deco: ['❗', '🚨', '⏰', '❗'] },
+    event:       { head: 'bg-brand-50',   ink: 'text-brand-700',   dots: ['bg-brand-400', 'bg-amber-400', 'bg-emerald-400'],  deco: ['📅', '⏰', '🗓️', '📍'] },
+    achievement: { head: 'bg-yellow-50',  ink: 'text-yellow-700',  dots: ['bg-yellow-400', 'bg-rose-400', 'bg-sky-400'],     deco: ['🏆', '⭐', '🥇', '🎖️'] },
+  };
+  Object.keys(STYLE).forEach(k => Object.assign(T[k], STYLE[k]));
+  /* Four emoji slots + ten confetti pieces, placed around the header */
+  const SLOTS = [
+    'top-5 start-6 sm:start-10 text-4xl sm:text-5xl -rotate-12',
+    'top-8 end-16 sm:end-24 text-3xl sm:text-4xl rotate-12',
+    'bottom-5 start-8 sm:start-24 text-3xl sm:text-4xl rotate-6',
+    'bottom-6 end-6 sm:end-12 text-4xl sm:text-5xl -rotate-6',
+  ];
+  const CONFETTI = [
+    'top-6 start-1/4 w-3 h-3 rounded-full',          'top-16 start-20 w-5 h-1.5 rotate-45 rounded',
+    'top-10 start-1/3 w-2 h-4 -rotate-12 rounded',    'top-5 end-1/3 w-3 h-3 rotate-12 rounded-sm',
+    'top-20 end-10 w-3 h-3 rounded-full',             'top-28 start-8 w-2 h-2 rounded-full',
+    'bottom-14 start-1/4 w-5 h-1.5 -rotate-45 rounded','bottom-8 end-1/4 w-3 h-3 rounded-full',
+    'bottom-16 end-14 w-2 h-4 rotate-45 rounded',     'bottom-5 start-1/2 w-3 h-3 rotate-45 rounded-sm',
+  ];
+  const seed = () => [
+    { id: 1, type: 'urgent',      pinned: true, done: false,  title: 'Payroll cut-off is tomorrow',      body: 'Submit attendance corrections to HR before Oct 31, 5:00 PM.', when: '1 hour ago',  meta: 'To: All employees' },
+    { id: 2, type: 'birthday',    pinned: false, done: false, title: 'Happy birthday, Maria Santos!',    body: 'Send a greeting to our Associate Professor in Academics.',    when: 'Today',       meta: 'Academics' },
+    { id: 3, type: 'anniversary', pinned: false, done: false, title: 'Maria Santos marks 5 years',       body: 'Thank you for five years of service with TDC.',                when: 'Nov 2',       meta: 'Joined Nov 2, 2021' },
+    { id: 4, type: 'welcome',     pinned: false, done: false, title: 'Welcome, Juan Dela Cruz',          body: 'Juan joins Human Resources as HR Manager. Say hello!',        when: '2 min ago',   meta: 'Human Resources' },
+    { id: 5, type: 'holiday',     pinned: false, done: false, title: 'No classes on November 30',        body: 'Bonifacio Day. Offices are closed and resume on Dec 1.',       when: 'Nov 30',      meta: 'To: All employees' },
+    { id: 6, type: 'event',       pinned: false, done: false, title: 'HR Department Meeting',            body: 'Monthly staff meeting. Agenda: leave credits and payroll.',    when: 'Nov 2, 10:00 AM', meta: 'Conference Room A' },
+    { id: 7, type: 'notice',      pinned: false, done: false, title: 'Leave credits update due Nov 15',  body: 'Department heads must confirm leave credits by 5:00 PM.',      when: 'Yesterday',   meta: 'Department heads' },
+    { id: 8, type: 'achievement', pinned: false, done: false, title: 'Paolo Mendoza passed the LET',     body: 'Congratulations on earning the Licensure Exam for Teachers.', when: '3 days ago',  meta: 'Academics' },
+  ];
+  const blank = () => ({ type: 'notice', title: '', body: '', audience: 'All employees', pinned: false });
+  return {
+    T, SLOTS, CONFETTI, items: seed(), filter: '', draft: blank(), err: false, nextId: 100,
+    annOpen: false, annQueue: [], annIdx: 0, hideAgain: false, annOpener: null,
+    get cur() { return this.annQueue[this.annIdx] || null; },
+    showAnn(list, i, ev) {
+      if (!list.length) return;
+      this.annOpener = (ev && ev.currentTarget) || document.activeElement;
+      this.annQueue = [...list]; this.annIdx = Math.max(0, i); this.hideAgain = false; this.annOpen = true;
+      document.body.style.overflow = 'hidden';
+      this.$nextTick(() => { const p = document.getElementById('ann-primary'); if (p) p.focus(); });
+    },
+    showType(type, ev) { this.showAnn(this.items.filter(a => a.type === type), 0, ev); },
+    previewDraft(ev) {
+      const d = this.draft;
+      this.showAnn([{ id: 0, type: d.type, pinned: d.pinned, done: false, title: d.title.trim() || T[d.type].hint, body: d.body.trim() || 'Your message appears here.', when: 'Just now', meta: 'To: ' + d.audience }], 0, ev);
+    },
+    stepAnn(n) { this.hideAgain = false; this.annIdx = Math.min(this.annQueue.length - 1, Math.max(0, this.annIdx + n)); },
+    hideAnn() {
+      if (this.hideAgain && this.cur && this.cur.id) this.dismiss(this.cur);
+      this.annOpen = false; this.hideAgain = false;
+      document.body.style.overflow = '';
+      if (this.annOpener && this.annOpener.isConnected) this.annOpener.focus();
+    },
+    trapAnn(e) {
+      const f = [...document.querySelectorAll('#ann-dialog button:not([disabled]), #ann-dialog input')].filter(x => x.offsetParent !== null);
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    },
+    get visible() {
+      return this.items.filter(a => !this.filter || a.type === this.filter)
+        .sort((a, b) => b.pinned - a.pinned);
+    },
+    act(a) {
+      a.done = true;
+      this.showToast(T[a.type].done + ': ' + a.title, 'success', T[a.type].label);
+    },
+    dismiss(a) { this.items = this.items.filter(x => x.id !== a.id); },
+    reset() { this.items = seed(); this.filter = ''; },
+    post() {
+      if (!this.draft.title.trim()) { this.err = true; return; }
+      this.err = false;
+      const d = this.draft;
+      this.items.unshift({ id: this.nextId++, type: d.type, pinned: d.pinned, done: false, title: d.title.trim(), body: d.body.trim() || 'No additional details.', when: 'Just now', meta: 'To: ' + d.audience });
+      this.filter = '';
+      this.draft = blank();
+      this.showToast('Your announcement is now live.', 'success', 'Announcement posted');
+    },
   };
 }
 function components() {
